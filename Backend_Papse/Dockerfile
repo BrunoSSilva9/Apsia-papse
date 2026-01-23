@@ -4,6 +4,8 @@ FROM node:18-alpine
 # 2. Diretório de Trabalho
 WORKDIR /usr/src/app
 
+RUN apk update && apk add --no-cache openssl
+
 # 3. Copiar Arquivos de Dependência
 COPY package*.json ./
 
