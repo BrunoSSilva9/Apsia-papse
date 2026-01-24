@@ -1,4 +1,6 @@
 import express from "express";
+import cors from "cors";
+
 import pacienteRoutes from "./routes/paciente.routes.js";
 import protocoloRoutes from "./routes/protocolo.routes.js";
 import colaboradorRoutes from "./routes/colaborador.routes.js";
@@ -12,6 +14,8 @@ console.log("✅ server.ts foi carregado");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use(cors());
 
 app.use(express.json());
 
