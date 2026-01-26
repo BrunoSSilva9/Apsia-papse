@@ -24,3 +24,23 @@ export interface AuthResponse {
   colaborador?: Colaborador;
   user?: Colaborador;
 }
+
+export type CardColor = "blue" | "amber" | "darkblue" | "coral";
+export type CardIcon = "users" | "clipboard" | "document" | "refresh";
+
+export default interface WaitingList {
+  id: number;
+  title: string;
+  description: string;
+  color: CardColor;
+  icon: CardIcon;
+  to?: string;
+}
+
+export interface WaitingListCardProps {
+  title: string;
+  description: string;
+  color: CardColor;
+  icon: CardIcon;
+  to?: string;
+}
