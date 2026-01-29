@@ -1,6 +1,6 @@
-import WaitingListCard from "../cards/WaitingListCard";
+import WaitingListCard from "../components/cards/WaitingListCard";
 
-import type WaitingList  from "../../types/index";
+import type WaitingList from "../types/index";
 
 const ManageAppointments: React.FC = () => {
   const waitingLists: WaitingList[] = [

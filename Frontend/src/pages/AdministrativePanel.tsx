@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
-import Header from "../layout/Header";
-import TabNavigationAdmin from "../layout/TabNavigationAdmin";
+import Header from "../components/layout/Header";
+import TabNavigationAdmin from "../components/layout/TabNavigationAdmin";
 
 const AdministrativePanel: React.FC = () => {
   return (

@@ -8,6 +8,13 @@ export interface Colaborador {
   data_admissao: string;
 }
 
+export interface AuthResponse {
+  token: string;
+  colaborador?: Colaborador;
+  usuario?: Colaborador;
+  user?: Colaborador;
+}
+
 export interface Paciente {
   idPaciente: number;
   nome: string;
@@ -28,7 +35,7 @@ export interface AuthResponse {
 export type CardColor = "blue" | "amber" | "darkblue" | "coral";
 export type CardIcon = "users" | "clipboard" | "document" | "refresh";
 
-export default interface WaitingList {
+export interface WaitingList {
   id: number;
   title: string;
   description: string;
