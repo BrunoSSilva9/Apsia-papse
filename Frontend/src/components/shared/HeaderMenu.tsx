@@ -52,7 +52,7 @@ const HeaderMenu = ({ variant = "guest" }: HeaderMenuProps) => {
   const guestItems: MenuItem[] = [
     { label: "SAIR", path: "/" },
     { label: "UNIFESSPA", externalUrl: "https://www.unifesspa.edu.br/" },
-    { label: "LOGIN", path: "/" },
+    // { label: "LOGIN", path: "/login" },
   ];
 
   const loggedInItems: MenuItem[] = [

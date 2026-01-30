@@ -7,6 +7,7 @@ import ManageAppointments from "./pages/ManageAppointments";
 import PatientList from "./pages/PatientList";
 import Bolsista from "./pages/Bolsista";
 import Historical from "./pages/Historico";
+import Home from "./pages/Home";
 
 import { PrivateRoute } from "./pages/PrivateRoute";
 
@@ -14,7 +15,8 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
 
         <Route element={<PrivateRoute />}>
           <Route path="/admin" element={<AdministrativePanel />}>
