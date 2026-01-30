@@ -8,6 +8,7 @@ import PatientList from "./pages/PatientList";
 import Bolsista from "./pages/Bolsista";
 import Historical from "./pages/Historico";
 import Home from "./pages/Home";
+import Sobre from './pages/Sobre';
 
 import { PrivateRoute } from "./pages/PrivateRoute";
 
@@ -16,6 +17,7 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/sobre" element={<Sobre />} />
         <Route path="/login" element={<Login />} />
 
         <Route element={<PrivateRoute />}>
