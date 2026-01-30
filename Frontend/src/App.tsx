@@ -8,6 +8,7 @@ import PatientList from "./pages/PatientList";
 import Bolsista from "./pages/Bolsista";
 import Historical from "./pages/Historico";
 import Home from "./pages/Home";
+import Formulario from "./pages/Formulario";
 
 import { PrivateRoute } from "./pages/PrivateRoute";
 
@@ -17,6 +18,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/formulario" element={<Formulario />} />
 
         <Route element={<PrivateRoute />}>
           <Route path="/admin" element={<AdministrativePanel />}>
