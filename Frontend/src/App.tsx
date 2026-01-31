@@ -11,6 +11,7 @@ import Collaborators from "./pages/Collaborators";
 import Relatorio from "./pages/relatorio";
 import Home from "./pages/Home";
 import Formulario from "./pages/Formulario";
+import Formulario From "./pages/Sobre";
 
 import { PrivateRoute } from "./pages/PrivateRoute";
 
@@ -19,6 +20,7 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/sobre" element={<Sobre />} />
         <Route path="/login" element={<Login />} />
         <Route path="/formulario" element={<Formulario />} />
 
