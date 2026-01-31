@@ -10,6 +10,7 @@ import Historical from "./pages/Historico";
 import Collaborators from "./pages/Collaborators";
 import Relatorio from "./pages/relatorio";
 import Home from "./pages/Home";
+import Formulario from "./pages/Formulario";
 
 import { PrivateRoute } from "./pages/PrivateRoute";
 
@@ -19,6 +20,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/formulario" element={<Formulario />} />
 
         <Route element={<PrivateRoute requiredRole="ADMIN" />}>
           <Route path="/admin" element={<AdministrativePanel />}>
