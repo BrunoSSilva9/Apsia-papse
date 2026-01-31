@@ -11,7 +11,7 @@ import Collaborators from "./pages/Collaborators";
 import Relatorio from "./pages/relatorio";
 import Home from "./pages/Home";
 import Formulario from "./pages/Formulario";
-import Formulario From "./pages/Sobre";
+import Sobre from "./pages/Sobre";
 
 import { PrivateRoute } from "./pages/PrivateRoute";
 
