@@ -5,7 +5,7 @@ import axios, {
 } from "axios";
 
 const baseURL =
-  (import.meta.env.VITE_API_URL as string) || "http://localhost:3001/api";
+  (import.meta.env.VITE_API_URL as string) || "http://localhost:3000/api";
 
 const api = axios.create({
   baseURL,
@@ -46,14 +46,20 @@ export const createListaRegular = (data: any) =>
   api.post("/listaregular", data);
 export const deleteListaRegular = (id: number) =>
   api.delete(`/listaregular/${id}`);
+export const updateListaRegular = (id: number, data: any) =>
+  api.put(`/listaregular/${id}`, data);
 
 export const getProtocolos = () => api.get("/protocolos");
 export const createProtocolo = (data: any) => api.post("/protocolos", data);
 export const deleteProtocolo = (id: number) => api.delete(`/protocolos/${id}`);
+export const updateProtocolo = (id: number, data: any) =>
+  api.put(`/protocolos/${id}`, data);
 
 export const getRegulares = () => api.get("/regular");
 export const createRegular = (data: any) => api.post("/regular", data);
 export const deleteRegular = (id: number) => api.delete(`/regular/${id}`);
+export const updateRegular = (id: number, data: any) =>
+  api.put(`/regular/${id}`, data);
 
 export const getBolsistas = () => api.get("/colaboradores");
 export const createColaborador = (data: any) =>
@@ -62,4 +68,10 @@ export const deleteColaborador = (id: number) =>
   api.delete(`/colaboradores/${id}`);
 
 export const getHistorico = () => api.get("/historico");
+export const deleteHistorico = (id: number) => api.delete(`/historico/${id}`);
+
+export const createRelatorio = (data: any) => api.post("/relatorios", data);
+export const getRelatoriosPorPaciente = (idPaciente: number) =>
+  api.get(`/relatorios/${idPaciente}`);
+
 export default api;

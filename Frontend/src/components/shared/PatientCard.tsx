@@ -8,11 +8,13 @@ import {
   BookOpen,
   Hash,
   Calendar,
+  UserCheck,
   //FileText,
 } from "lucide-react";
 
 interface Patient {
-  id: number;
+  id?: number;
+  idPaciente?: number;
   nome: string;
   telefone?: string;
   curso?: string;
@@ -33,6 +35,7 @@ interface PatientCardProps {
   index: number;
   onEncaminhar?: Transition[];
   onEncerrar?: (patient: Patient) => void;
+  onAddRelatorio?: (patient: Patient) => void;
   showPosition?: boolean;
   colorTheme?: string;
 }
@@ -42,6 +45,7 @@ const PatientCard = ({
   index,
   onEncaminhar,
   onEncerrar,
+  onAddRelatorio,
   showPosition = true,
   colorTheme = "blue",
 }: PatientCardProps) => {
@@ -49,12 +53,7 @@ const PatientCard = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const themeClasses: any = {
-    blue: "focus:ring-blue-500",
-    amber: "focus:ring-amber-500",
-    indigo: "focus:ring-indigo-500",
-    orange: "focus:ring-orange-500",
-  };
+  const displayId = patient.id || patient.idPaciente || "---";
 
   const textTheme: any = {
     blue: "text-blue-600 hover:text-blue-800",
@@ -88,12 +87,14 @@ const PatientCard = ({
   }, [menuOpen]);
 
   return (
-    <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 transition-colors">
-      <div className="bg-gray-50 border-b border-gray-200 py-2 px-4 text-center">
+    <div
+      className={`bg-white border-2 border-gray-200 rounded-xl hover:border-gray-300 transition-colors relative ${expanded ? "ring-2 ring-opacity-50" : ""}`}
+    >
+      <div className="bg-gray-50 border-b border-gray-200 py-2 px-4 text-center rounded-t-xl">
         <span className="text-sm font-semibold text-gray-700">
           {showPosition
             ? `${index + 1}º lugar na lista de espera`
-            : `Registro #${patient.id}`}
+            : `Registro #${displayId}`}
         </span>
       </div>
 
@@ -115,36 +116,84 @@ const PatientCard = ({
                     e.stopPropagation();
                     setMenuOpen(!menuOpen);
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
                 >
                   <MoreVertical size={20} />
                 </button>
+
                 {menuOpen && (
-                  <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-100 z-10 py-1">
+                  <div className="absolute right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 py-1 animate-fade-in origin-top-right">
                     {onEncaminhar?.map((t, idx) => (
                       <button
                         key={idx}
-                        onClick={() => t.action(patient)}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => {
+                          t.action(patient);
+                          setMenuOpen(false);
+                        }}
+                        className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors"
                       >
                         {t.label}
                       </button>
                     ))}
-                    {onEncerrar && (
+
+                    {onAddRelatorio && (
                       <button
-                        onClick={() => onEncerrar(patient)}
-                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        onClick={() => {
+                          onAddRelatorio(patient);
+                          setMenuOpen(false);
+                        }}
+                        className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-600 transition-colors border-t border-gray-100"
                       >
-                        Encerrar
+                        Adicionar Relatório
                       </button>
+                    )}
+
+                    {onEncerrar && (
+                      <>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <button
+                          onClick={() => {
+                            onEncerrar(patient);
+                            setMenuOpen(false);
+                          }}
+                          className="block w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          Encerrar Inscrição
+                        </button>
+                      </>
                     )}
                   </div>
                 )}
               </div>
             </div>
 
+            {!expanded && (
+              <div className="mt-1">
+                <p className="text-sm text-gray-500">
+                  {patient.curso || "Curso não informado"}
+                </p>
+                {patient.bolsistaNome && (
+                  <div className="flex items-center gap-1 mt-2 text-xs font-medium text-blue-600 bg-blue-50 w-fit px-2 py-1 rounded">
+                    <UserCheck size={12} />
+                    <span>Resp: {patient.bolsistaNome}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {expanded && (
               <div className="mt-4 space-y-2 text-sm text-gray-600 animate-fade-in">
+                {patient.bolsistaNome && (
+                  <div className="flex items-center gap-2 mb-3 text-blue-700 bg-blue-50 p-2 rounded-md border border-blue-100">
+                    <UserCheck size={18} />
+                    <span className="font-bold text-xs uppercase tracking-wide">
+                      Responsável:
+                    </span>
+                    <span className="font-semibold">
+                      {patient.bolsistaNome}
+                    </span>
+                  </div>
+                )}
                 {patient.email && (
                   <div className="flex gap-2">
                     <Mail size={16} className="text-gray-400" />{" "}
@@ -171,7 +220,7 @@ const PatientCard = ({
                   <span className="font-semibold text-gray-700 block mb-1">
                     Carta/Relato:
                   </span>
-                  <p className="italic text-gray-500 bg-gray-50 p-2 rounded border border-gray-100">
+                  <p className="italic text-gray-500 bg-gray-50 p-2 rounded border border-gray-100 text-xs">
                     {patient.motivo || "Não informado"}
                   </p>
                 </div>
