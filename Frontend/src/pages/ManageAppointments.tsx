@@ -1,6 +1,6 @@
+import React from "react";
 import WaitingListCard from "../components/cards/WaitingListCard";
-
-import type WaitingList from "../types/index";
+import type { WaitingList } from "../types/index";
 
 const ManageAppointments: React.FC = () => {
   const waitingLists: WaitingList[] = [
@@ -36,10 +36,19 @@ const ManageAppointments: React.FC = () => {
       icon: "refresh",
       to: "/admin/regular",
     },
+
+    {
+      id: 5,
+      title: "Gerenciar Colaboradores",
+      description: "Cadastrar e remover bolsistas e administradores.",
+      color: "purple",
+      icon: "shield",
+      to: "/admin/colaboradores",
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
       {waitingLists.map((list) => (
         <WaitingListCard
           key={list.id}

@@ -7,8 +7,11 @@ import ManageAppointments from "./pages/ManageAppointments";
 import PatientList from "./pages/PatientList";
 import Bolsista from "./pages/Bolsista";
 import Historical from "./pages/Historico";
+import Collaborators from "./pages/Collaborators";
+import Relatorio from "./pages/relatorio";
 import Home from "./pages/Home";
-import Sobre from './pages/Sobre';
+import Formulario from "./pages/Formulario";
+import Formulario From "./pages/Sobre";
 
 import { PrivateRoute } from "./pages/PrivateRoute";
 
@@ -19,10 +22,14 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/formulario" element={<Formulario />} />
 
-        <Route element={<PrivateRoute />}>
+        <Route element={<PrivateRoute requiredRole="ADMIN" />}>
           <Route path="/admin" element={<AdministrativePanel />}>
             <Route index element={<ManageAppointments />} />
+            <Route path="colaboradores" element={<Collaborators />} />
+            <Route path="relatorios" element={<Relatorio />} />
+            <Route path="historical" element={<Historical />} />
 
             <Route
               path="waiting-list"
@@ -32,18 +39,11 @@ function App() {
                   title="Lista de Espera"
                   transitions={[
                     {
-                      label: "Mover para Espera Regular",
-                      target: "espera_regulares",
-                    },
-                    {
-                      label: "Mover para Protocolo",
+                      label: "Encaminhar para Atendimento de Protocolo",
                       target: "atendimento_protocolo",
                     },
-                    {
-                      label: "Mover para Regular",
-                      target: "atendimento_regular",
-                    },
                   ]}
+                  canEncerrar={true}
                 />
               }
             />
@@ -53,21 +53,14 @@ function App() {
               element={
                 <PatientList
                   status="espera_regulares"
-                  title="Espera para Atendimentos Regulares"
+                  title="Lista de Espera para Atendimentos Regulares"
                   transitions={[
                     {
-                      label: "Retornar para Lista de Espera",
-                      target: "lista_de_espera",
-                    },
-                    {
-                      label: "Mover para Protocolo",
-                      target: "atendimento_protocolo",
-                    },
-                    {
-                      label: "Mover para Regular",
+                      label: "Encaminhar para Atendimento Regular",
                       target: "atendimento_regular",
                     },
                   ]}
+                  canEncerrar={true}
                 />
               }
             />
@@ -80,14 +73,15 @@ function App() {
                   title="Atendimentos de Protocolo"
                   transitions={[
                     {
-                      label: "Mover para Regular",
-                      target: "atendimento_regular",
-                    },
+                      label: "Encaminhar para outro bolsista",
+                      target: "atendimento_protocolo",
+                    }, // Auto-encaminhamento
                     {
-                      label: "Mover para Espera Regular",
+                      label: "Encaminhar para lista de espera regular",
                       target: "espera_regulares",
                     },
                   ]}
+                  canEncerrar={true}
                 />
               }
             />
@@ -100,22 +94,17 @@ function App() {
                   title="Atendimentos Regulares"
                   transitions={[
                     {
-                      label: "Mover para Protocolo",
-                      target: "atendimento_protocolo",
-                    },
-                    {
-                      label: "Mover para Espera Regular",
-                      target: "espera_regulares",
+                      label: "Encaminhar para outro bolsista",
+                      target: "atendimento_regular",
                     },
                   ]}
+                  canEncerrar={true}
                 />
               }
             />
 
-            <Route
-              path="report"
-              element={<div>Relatórios (Em construção)</div>}
-            />
+            <Route path="relatorio" element={<Relatorio />} />
+
             <Route path="historical" element={<Historical />} />
           </Route>
         </Route>

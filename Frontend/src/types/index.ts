@@ -32,8 +32,13 @@ export interface AuthResponse {
   user?: Colaborador;
 }
 
-export type CardColor = "blue" | "amber" | "darkblue" | "coral";
-export type CardIcon = "users" | "clipboard" | "document" | "refresh";
+export type CardColor = "blue" | "amber" | "darkblue" | "coral" | "purple";
+export type CardIcon =
+  | "users"
+  | "clipboard"
+  | "document"
+  | "refresh"
+  | "shield";
 
 export interface WaitingList {
   id: number;

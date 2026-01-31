@@ -31,6 +31,7 @@ model Paciente {
   Protocolo   Protocolo[]
   Regular     Regular[]
   Historico   Historico[]
+  Relatorios  RelatorioEvolutivo[]
 }
 
 model Colaborador {
@@ -47,6 +48,7 @@ model Colaborador {
   Protocolo    Protocolo[]
   Regular      Regular[]
   Historico    Historico[]
+  Relatorios   RelatorioEvolutivo[]
 }
 
 model ListaEspera {
@@ -108,4 +110,18 @@ model Historico {
   // Relação com Colaborador (último bolsista)
   id_ultimo_bolsista Int
   colaborador        Colaborador @relation(fields: [id_ultimo_bolsista], references: [idBolsista], onDelete: Cascade)
+}
+
+model RelatorioEvolutivo {
+  idRelatorio     Int      @id @default(autoincrement())
+  texto           String   @db.Text // @db.Text permite textos longos
+  data_criacao    DateTime @default(now())
+
+  // Relação com Paciente
+  idPaciente      Int
+  paciente        Paciente @relation(fields: [idPaciente], references: [idPaciente], onDelete: Cascade)
+
+  // Relação com Colaborador (quem escreveu)
+  idBolsista      Int
+  colaborador     Colaborador @relation(fields: [idBolsista], references: [idBolsista], onDelete: Cascade)
 }

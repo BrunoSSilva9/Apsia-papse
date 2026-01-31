@@ -9,6 +9,7 @@ import listaRegularRoutes from "./routes/listaRegular.routes.js";
 import regularRoutes from "./routes/regular.routes.js";
 import historicoRoutes from "./routes/historico.routes.js";
 import authRoutes from "./routes/auth.routes.js";
+import relatorioRoutes from "./routes/relatorio.routes.js";
 
 console.log("✅ server.ts foi carregado");
 
@@ -28,6 +29,7 @@ app.use("/api", listaEsperaRoutes);
 app.use("/api", listaRegularRoutes);
 app.use("/api", regularRoutes);
 app.use("/api", historicoRoutes);
+app.use("/api/relatorios", relatorioRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "API está funcionando!" });
