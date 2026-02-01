@@ -1,13 +1,7 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
+import HeaderMenu from "../components/shared/HeaderMenu";
 
 const Sobre = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const toggleMenu = () => {
-    setMenuOpen(!menuOpen);
-  };
-
   return (
     <div className="min-h-screen w-full bg-[#5373d6] relative flex flex-col text-white font-sans">
       <nav className="flex justify-between items-center px-8 py-6 relative z-50">
@@ -32,32 +26,9 @@ const Sobre = () => {
           </Link>
         </div>
 
-        <div
-          className="cursor-pointer flex flex-col gap-[5px] p-2"
-          onClick={toggleMenu}
-        >
-          <div className="w-6 h-[4px] bg-[#ff8c69] rounded-sm"></div>
-          <div className="w-6 h-[4px] bg-[#ff8c69] rounded-sm"></div>
-          <div className="w-6 h-[4px] bg-[#ff8c69] rounded-sm"></div>
+        <div className="bg-white rounded-lg shadow-sm p-1">
+          <HeaderMenu variant="guest" />
         </div>
-
-        {menuOpen && (
-          <div className="absolute top-16 right-5 bg-white rounded-lg shadow-lg py-2 flex flex-col min-w-[150px] z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-            <Link
-              to="/login"
-              className="px-5 py-2 text-gray-800 text-sm font-semibold hover:bg-gray-100 transition-colors block"
-            >
-              LOGIN
-            </Link>
-            <a
-              href="https://www.unifesspa.edu.br/"
-              target="_blank"
-              className="px-5 py-2 text-gray-800 text-sm font-semibold hover:bg-gray-100 transition-colors block"
-            >
-              UNIFESSPA
-            </a>
-          </div>
-        )}
       </nav>
 
       <main className="flex-1 flex flex-col items-center px-6 md:px-20 pt-10 md:pt-20 pb-10 relative z-10 w-full max-w-5xl mx-auto">
@@ -87,20 +58,20 @@ const Sobre = () => {
               feitos por discentes regularmente matriculados no Curso de
               Psicologia, com supervisão clínica, tendo como base a Teoria
               Psicanalítica. As sessões normalmente acontecem uma vez por
-              semana, de forma presencial ou remota. Os principais
-              objetivos do programa são: atender à demanda de atendimentos
-              psicológicos de discentes da Unifesspa; oferecer supervisão
-              clínica, colaborando na formação dos discentes de Psicologia
-              selecionados no Programa; e contribuir para redução da taxa de
-              evasão/retenção entre os discentes da Unifesspa, ocasionadas por
-              problemas psicológicos. O grupo está atualmente composto por seis
-              discentes bolsistas, quatro discentes voluntárias, uma técnica
-              colaboradora e uma supervisora, docente na mesma faculdade
-              (FAPSI). No ano de 2024, já foram atendidos 96 discentes. Contudo,
-              desde o início do programa, mais de 300 estudantes de diversos
-              cursos da Unifesspa já se beneficiaram. O PAPSE também oferece um
-              atendimento de protocolo, em que são realizadas até cinco sessões,
-              das quais, após serem concluídas, quem desejar segue aguardando
+              semana, de forma presencial ou remota. Os principais objetivos do
+              programa são: atender à demanda de atendimentos psicológicos de
+              discentes da Unifesspa; oferecer supervisão clínica, colaborando
+              na formação dos discentes de Psicologia selecionados no Programa;
+              e contribuir para redução da taxa de evasão/retenção entre os
+              discentes da Unifesspa, ocasionadas por problemas psicológicos. O
+              grupo está atualmente composto por seis discentes bolsistas,
+              quatro discentes voluntárias, uma técnica colaboradora e uma
+              supervisora, docente na mesma faculdade (FAPSI). No ano de 2024,
+              já foram atendidos 96 discentes. Contudo, desde o início do
+              programa, mais de 300 estudantes de diversos cursos da Unifesspa
+              já se beneficiaram. O PAPSE também oferece um atendimento de
+              protocolo, em que são realizadas até cinco sessões, das quais,
+              após serem concluídas, quem desejar segue aguardando
               disponibilidade de vaga para atendimento regular na fila de
               espera.
             </p>
