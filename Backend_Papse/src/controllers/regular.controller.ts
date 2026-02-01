@@ -22,7 +22,9 @@ export class RegularController {
       return res.status(200).json(registros);
     } catch (error) {
       console.error("Erro ao buscar registros regulares:", error);
-      return res.status(500).json({ error: "Erro ao buscar registros regulares." });
+      return res
+        .status(500)
+        .json({ error: "Erro ao buscar registros regulares." });
     }
   }
 
@@ -34,7 +36,24 @@ export class RegularController {
       return res.status(200).json(registro);
     } catch (error) {
       console.error("Erro ao buscar registro regular:", error);
-      return res.status(500).json({ error: "Erro ao buscar registro regular." });
+      return res
+        .status(500)
+        .json({ error: "Erro ao buscar registro regular." });
+    }
+  }
+
+  async update(req: Request, res: Response) {
+    const id = Number(req.params.id);
+    const data = req.body;
+
+    try {
+      const registroAtualizado = await this.regularService.update(id, data);
+      return res.status(200).json(registroAtualizado);
+    } catch (error) {
+      console.error("Erro ao atualizar registro regular:", error);
+      return res
+        .status(500)
+        .json({ error: "Erro ao atualizar registro regular." });
     }
   }
 
@@ -46,7 +65,9 @@ export class RegularController {
       return res.status(204).send();
     } catch (error) {
       console.error("Erro ao deletar registro regular:", error);
-      return res.status(500).json({ error: "Erro ao deletar registro regular." });
+      return res
+        .status(500)
+        .json({ error: "Erro ao deletar registro regular." });
     }
   }
 }

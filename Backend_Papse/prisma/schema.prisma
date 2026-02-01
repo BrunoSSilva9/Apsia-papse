@@ -13,14 +13,13 @@ enum Role {
   BOLSISTA
 }
 
-// --- NOSSOS MODELS ---
 
 model Paciente {
   idPaciente      Int       @id @default(autoincrement())
   nome            String    @db.VarChar(150)
   matricula       String    @db.VarChar(45)
   data_nascimento DateTime  @db.Date
-  telefone        String?   @db.VarChar(11) // O '?' indica que o campo é opcional (pode ser NULL)
+  telefone        String?   @db.VarChar(11) 
   data_inscricao  DateTime  @db.Date
   relato          String?   @default("SEM RELATO") @db.VarChar(500)
   curso           String?   @db.VarChar(150)
@@ -114,7 +113,7 @@ model Historico {
 
 model RelatorioEvolutivo {
   idRelatorio     Int      @id @default(autoincrement())
-  texto           String   @db.Text // @db.Text permite textos longos
+  texto           String   @db.Text 
   data_criacao    DateTime @default(now())
 
   // Relação com Paciente

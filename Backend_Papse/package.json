@@ -29,7 +29,8 @@
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.6",
     "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "react-hook-form": "^7.71.1"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

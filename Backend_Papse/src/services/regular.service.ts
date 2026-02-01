@@ -8,6 +8,12 @@ export interface CreateRegularDto {
   idBolsista: number;
 }
 
+export interface UpdateRegularDto {
+  data_inicio_atendimento?: Date;
+  qtde_sessoes?: number;
+  idBolsista?: number;
+}
+
 export class RegularService {
   async create(data: CreateRegularDto) {
     try {
@@ -59,7 +65,7 @@ export class RegularService {
       if (error.code === "P2025") {
         console.error(
           "Erro ao criar registro regular: Colaborador não encontrado.",
-          error
+          error,
         );
         throw new Error("Colaborador informado não existe.");
       }
@@ -112,6 +118,45 @@ export class RegularService {
     }
   }
 
+  async update(id: number, data: UpdateRegularDto) {
+    try {
+      await prisma.regular.findUniqueOrThrow({
+        where: { idRegular: id },
+      });
+
+      if (data.idBolsista) {
+        await prisma.colaborador.findUniqueOrThrow({
+          where: { idBolsista: data.idBolsista },
+        });
+      }
+
+      const registroAtualizado = await prisma.regular.update({
+        where: { idRegular: id },
+        data: {
+          ...(data.data_inicio_atendimento && {
+            data_inicio_atendimento: new Date(data.data_inicio_atendimento),
+          }),
+          ...(data.qtde_sessoes !== undefined && {
+            qtde_sessoes: data.qtde_sessoes,
+          }),
+          ...(data.idBolsista && { idBolsista: data.idBolsista }),
+        },
+        include: {
+          paciente: true,
+          colaborador: true,
+        },
+      });
+
+      return registroAtualizado;
+    } catch (error: any) {
+      if (error.code === "P2025") {
+        throw new Error("Registro ou colaborador não encontrado.");
+      }
+      console.error(`Erro ao atualizar registro regular ID ${id}:`, error);
+      throw new Error("Erro interno ao atualizar registro regular.");
+    }
+  }
+
   async delete(id: number) {
     try {
       const regularParaArquivar = await prisma.regular.findUniqueOrThrow({
@@ -137,7 +182,7 @@ export class RegularService {
       }
       console.error(
         `Erro ao arquivar registro de atendimento regular com ID ${id}:`,
-        error
+        error,
       );
       throw new Error("Não foi possível arquivar o registro.");
     }
