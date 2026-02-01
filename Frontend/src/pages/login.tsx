@@ -36,7 +36,7 @@ const Login = () => {
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row relative">
       <div className="absolute top-4 right-4 z-50">
-        <HeaderMenu variant="guest" />
+        <HeaderMenu variant="logged-in" />
       </div>
 
       <section className="flex w-full lg:w-[60%] items-center justify-center bg-[#2B468B] p-8 relative">

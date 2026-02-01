@@ -1,4 +1,3 @@
-// src/components/shared/HeaderMenu.tsx
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
@@ -24,7 +23,6 @@ const HeaderMenu = ({ variant = "guest" }: HeaderMenuProps) => {
   const { signOut } = useAuth();
 
   const closeMenu = () => setIsOpen(false);
-
   const toggleMenu = () => setIsOpen(!isOpen);
 
   const handleLogout = () => {
@@ -39,24 +37,17 @@ const HeaderMenu = ({ variant = "guest" }: HeaderMenuProps) => {
         closeMenu();
       }
     };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    if (isOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
   const guestItems: MenuItem[] = [
-    { label: "SAIR", path: "/" },
+    { label: "LOGIN", path: "/login" },
     { label: "UNIFESSPA", externalUrl: "https://www.unifesspa.edu.br/" },
-    // { label: "LOGIN", path: "/login" },
   ];
 
   const loggedInItems: MenuItem[] = [
-    { label: "HOME", path: "/dashboard" },
+    { label: "HOME", path: "/" },
     { label: "SAIR", action: handleLogout },
   ];
 
@@ -66,18 +57,18 @@ const HeaderMenu = ({ variant = "guest" }: HeaderMenuProps) => {
     <div className="relative" ref={menuRef}>
       <button
         onClick={toggleMenu}
-        className="p-2 text-orange-500 hover:bg-orange-100 rounded-md transition-colors focus:outline-none"
+        className="p-1.5 text-orange-500 hover:bg-orange-100 rounded-md transition-colors focus:outline-none flex items-center justify-center"
         aria-label="Abrir menu"
       >
-        {isOpen ? <X size={32} /> : <Menu size={32} />}
+        {isOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl py-4 z-50 border border-gray-100">
+        <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl py-2 z-50 border border-gray-100 animate-fade-in">
           <ul className="flex flex-col">
             {itemsToShow.map((item, index) => {
               const baseClasses =
-                "block w-full text-left px-6 py-3 text-gray-800 font-nunito font-bold uppercase hover:text-orange-500 hover:bg-orange-50 transition-colors";
+                "block w-full text-left px-6 py-3 text-gray-800 font-nunito font-bold uppercase hover:text-orange-500 hover:bg-orange-50 transition-colors text-sm";
 
               if (item.externalUrl) {
                 return (

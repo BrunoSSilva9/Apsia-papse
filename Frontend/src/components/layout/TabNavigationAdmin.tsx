@@ -20,12 +20,14 @@ const TabNavigationAdmin: React.FC = () => {
             Relatórios
           </NavLink>
 
-          <NavLink to="/admin/historical" className={linkClass}>
+          <NavLink to="/admin/historico" className={linkClass}>
             Histórico
           </NavLink>
 
-          {/* Nova Aba */}
-          <NavLink to="/admin/colaboradores" className={linkClass}>
+          <NavLink
+            to="/admin/gerenciamento-colaboradores"
+            className={linkClass}
+          >
             Colaboradores
           </NavLink>
         </nav>

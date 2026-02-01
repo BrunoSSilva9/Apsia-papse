@@ -1,8 +1,47 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
+import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import illustration from "../assets/images/formulario_illustration.png";
+import HeaderMenu from "../components/shared/HeaderMenu";
+
+const CURSOS_UNIFESSPA = [
+  "Administração",
+  "Agronomia",
+  "Arquitetura e Urbanismo",
+  "Artes Visuais",
+  "Ciências Biológicas",
+  "Ciências Contábeis",
+  "Ciências Econômicas",
+  "Ciências Naturais",
+  "Ciências Sociais",
+  "Direito",
+  "Engenharia Civil",
+  "Engenharia de Computação",
+  "Engenharia de Materiais",
+  "Engenharia de Minas e Meio Ambiente",
+  "Engenharia Elétrica",
+  "Engenharia Florestal",
+  "Engenharia Mecânica",
+  "Engenharia Química",
+  "Física",
+  "Geografia",
+  "Geologia",
+  "História",
+  "Jornalismo",
+  "Letras – Inglês",
+  "Letras – Língua Portuguesa",
+  "Letras – Português",
+  "Matemática",
+  "Medicina Veterinária",
+  "Pedagogia",
+  "Psicologia",
+  "Química",
+  "Saúde Coletiva",
+  "Sistemas de Informação",
+  "Zootecnia",
+];
 
 interface FormData {
   nome: string;
@@ -14,72 +53,69 @@ interface FormData {
 }
 
 const Formulario = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const toggleMenu = () => {
-    setMenuOpen(!menuOpen);
-  };
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>();
 
-  const [formData, setFormData] = useState<FormData>({
-    nome: "",
-    matricula: "",
-    telefone: "",
-    curso: "",
-    data_nascimento: "",
-    relato: "",
-  });
-
-  const [status, setStatus] = useState(false)
-
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    setStatus(true);
+  const onSubmit = async (data: FormData) => {
+    setIsSubmitting(true);
 
     try {
+      if (!/^[0-9]+$/.test(data.telefone)) {
+        alert("O campo Telefone deve conter apenas números.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!/^[0-9]+$/.test(data.matricula)) {
+        alert("O campo Matrícula deve conter apenas números.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const dataNascimento = new Date(data.data_nascimento);
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+
+      if (dataNascimento > hoje) {
+        alert("Por favor, insira uma data de nascimento válida.");
+        setIsSubmitting(false);
+        return;
+      }
+
       const payload = {
-        nome: formData.nome.trim(),
-        matricula: formData.matricula.trim(),
-        data_nascimento: formData.data_nascimento,
+        nome: data.nome.trim(),
+        matricula: data.matricula.trim(),
+        data_nascimento: new Date(data.data_nascimento).toISOString(),
         data_inscricao: new Date().toISOString(),
-        telefone: formData.telefone.trim() || undefined,
-        curso: formData.curso || undefined,
-        relato: formData.relato.trim() || undefined,
+        telefone: data.telefone.trim(),
+        curso: data.curso,
+        relato: data.relato ? data.relato.trim() : "SEM RELATO",
       };
 
       await api.post("/pacientes", payload, {
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
 
-      setFormData({
-        nome: "",
-        matricula: "",
-        telefone: "",
-        curso: "",
-        data_nascimento: "",
-        relato: "",
-      });
+      alert("Inscrição realizada com sucesso!");
+      reset();
     } catch (error: any) {
       console.error("Erro completo:", error);
-    }finally{
-        setStatus(false);
+      alert(
+        "Ocorreu um erro. Verifique se a matrícula já não está cadastrada.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#FF6B3D] overflow-hidden flex flex-col relative">
-      {/* Navbar */}
+    <div className="min-h-screen bg-[#FF6B3D] overflow-hidden flex flex-col relative font-sans">
       <nav className="flex flex-wrap justify-between items-center p-8 relative z-50 text-white">
         <div className="flex gap-4 md:gap-8 items-center">
           <Link
@@ -102,62 +138,38 @@ const Formulario = () => {
           </Link>
         </div>
 
-        <div className="md:hidden"></div>
-
-        <div
-          className="cursor-pointer flex flex-col gap-[5px] p-2"
-          onClick={toggleMenu}
-        >
-          <div className="w-6 h-[3px] bg-white rounded-full"></div>
-          <div className="w-6 h-[3px] bg-white rounded-full"></div>
-          <div className="w-6 h-[3px] bg-white rounded-full"></div>
+        <div className="bg-white rounded-lg shadow-sm">
+          <HeaderMenu variant="guest" />
         </div>
-
-        {menuOpen && (
-          <div className="absolute top-16 right-5 bg-white rounded-lg shadow-lg py-2 flex flex-col min-w-[150px] z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-            <Link
-              to="/login"
-              className="px-5 py-2 text-gray-800 text-sm font-semibold hover:bg-gray-100 transition-colors block"
-            >
-              LOGIN
-            </Link>
-            <a
-              href="https://www.unifesspa.edu.br/"
-              target="_blank"
-              className="px-5 py-2 text-gray-800 text-sm font-semibold hover:bg-gray-100 transition-colors block"
-            >
-              UNIFESSPA
-            </a>
-          </div>
-        )}
       </nav>
 
       <div className="flex flex-1 relative">
-        {/* Left Side - Form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-8 z-10">
-          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-6 lg:p-8">
-            <h2 className="text-2xl font-bold text-center text-gray-800 mb-6 font-sans">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 lg:p-8">
+            <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
               Ficha de Inscrição
             </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
                 <label
                   htmlFor="nome"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Nome
+                  Nome Completo
                 </label>
                 <input
                   type="text"
                   id="nome"
-                  name="nome"
-                  value={formData.nome}
-                  onChange={handleChange}
-                  placeholder="Digite seu nome"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
-                  required
+                  placeholder="Digite seu nome completo"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:outline-none transition-colors ${errors.nome ? "border-red-500 focus:ring-red-200" : "border-gray-300 focus:ring-orange-500 focus:border-orange-500"}`}
+                  {...register("nome", { required: "Nome é obrigatório" })}
                 />
+                {errors.nome && (
+                  <span className="text-red-500 text-xs mt-1">
+                    {errors.nome.message}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -165,18 +177,22 @@ const Formulario = () => {
                   htmlFor="telefone"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Telefone
+                  Telefone (apenas números)
                 </label>
                 <input
                   type="tel"
                   id="telefone"
-                  name="telefone"
-                  value={formData.telefone}
-                  onChange={handleChange}
-                  placeholder="Digite seu telefone"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
-                  required
+                  placeholder="Ex: 94999999999"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:outline-none transition-colors ${errors.telefone ? "border-red-500 focus:ring-red-200" : "border-gray-300 focus:ring-orange-500 focus:border-orange-500"}`}
+                  {...register("telefone", {
+                    required: "Telefone é obrigatório",
+                  })}
                 />
+                {errors.telefone && (
+                  <span className="text-red-500 text-xs mt-1">
+                    {errors.telefone.message}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -188,24 +204,25 @@ const Formulario = () => {
                 </label>
                 <select
                   id="curso"
-                  name="curso"
-                  value={formData.curso}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors bg-white"
-                  required
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:outline-none transition-colors bg-white ${errors.curso ? "border-red-500 focus:ring-red-200" : "border-gray-300 focus:ring-orange-500 focus:border-orange-500"}`}
+                  {...register("curso", { required: "Selecione um curso" })}
+                  defaultValue=""
                 >
                   <option value="" disabled>
                     Escolha seu curso
                   </option>
-                  <option value="Engenharia de Computação">
-                    Engenharia de Computação
-                  </option>
-                  <option value="Sistemas de Informação">
-                    Sistemas de Informação
-                  </option>
-                  <option value="Psicologia">Psicologia</option>
-                  <option value="Outro">Outro</option>
+
+                  {CURSOS_UNIFESSPA.map((curso) => (
+                    <option key={curso} value={curso}>
+                      {curso}
+                    </option>
+                  ))}
                 </select>
+                {errors.curso && (
+                  <span className="text-red-500 text-xs mt-1">
+                    {errors.curso.message}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -218,12 +235,16 @@ const Formulario = () => {
                 <input
                   type="date"
                   id="data_nascimento"
-                  name="data_nascimento"
-                  value={formData.data_nascimento}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
-                  required
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:outline-none transition-colors ${errors.data_nascimento ? "border-red-500 focus:ring-red-200" : "border-gray-300 focus:ring-orange-500 focus:border-orange-500"}`}
+                  {...register("data_nascimento", {
+                    required: "Data de nascimento é obrigatória",
+                  })}
                 />
+                {errors.data_nascimento && (
+                  <span className="text-red-500 text-xs mt-1">
+                    {errors.data_nascimento.message}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -231,18 +252,22 @@ const Formulario = () => {
                   htmlFor="matricula"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Matrícula
+                  Matrícula (apenas números)
                 </label>
                 <input
                   type="text"
                   id="matricula"
-                  name="matricula"
-                  value={formData.matricula}
-                  onChange={handleChange}
                   placeholder="Digite sua matrícula"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
-                  required
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:outline-none transition-colors ${errors.matricula ? "border-red-500 focus:ring-red-200" : "border-gray-300 focus:ring-orange-500 focus:border-orange-500"}`}
+                  {...register("matricula", {
+                    required: "Matrícula é obrigatória",
+                  })}
                 />
+                {errors.matricula && (
+                  <span className="text-red-500 text-xs mt-1">
+                    {errors.matricula.message}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -250,36 +275,59 @@ const Formulario = () => {
                   htmlFor="relato"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Deseja escrever o motivo do porque acha que precisa de
-                  acompanhamento psicológico?{" "}
-                  <span className="text-gray-400 text-xs">(Opcional)</span>
+                  Motivo da solicitação{" "}
+                  <span className="text-gray-400 text-xs font-normal">
+                    (Opcional)
+                  </span>
                 </label>
                 <textarea
                   id="relato"
-                  name="relato"
-                  value={formData.relato}
-                  onChange={handleChange}
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors resize-none"
+                  {...register("relato")}
                 ></textarea>
               </div>
 
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={status}
-                  className="w-full bg-[#FF7A50] hover:bg-[#ff6130] text-white font-bold py-3 px-4 rounded-full transition-colors shadow-md disabled:opacity-70"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#FF7A50] hover:bg-[#ff6130] text-white font-bold py-3 px-4 rounded-full transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center"
                 >
-                  {status? "ENVIANDO..." : "ENVIAR"}
+                  {isSubmitting ? (
+                    <>
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      ENVIANDO...
+                    </>
+                  ) : (
+                    "ENVIAR INSCRIÇÃO"
+                  )}
                 </button>
               </div>
             </form>
           </div>
         </div>
 
-        {/* Right Side - Illustration with Diagonal Background */}
         <div className="hidden lg:flex lg:w-1/2 items-end justify-center relative">
-          {/* White Background */}
           <div
             className="absolute inset-0 z-0 bg-[#FFF8F0]"
             style={{ clipPath: "polygon(80% 0%, 100% 0, 100% 100%, 0% 100%)" }}
@@ -289,7 +337,7 @@ const Formulario = () => {
             <img
               src={illustration}
               alt="Ilustração Estudante"
-              className="max-w-full max-h-[85vh] object-contain"
+              className="max-w-full max-h-[85vh] object-contain drop-shadow-xl"
             />
           </div>
         </div>

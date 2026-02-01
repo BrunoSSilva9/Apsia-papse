@@ -10,7 +10,7 @@ const ManageAppointments: React.FC = () => {
       description: "Pacientes aguardando atendimento inicial.",
       color: "blue",
       icon: "users",
-      to: "/admin/waiting-list",
+      to: "/admin/lista-espera",
     },
     {
       id: 2,
@@ -18,7 +18,7 @@ const ManageAppointments: React.FC = () => {
       description: "Pacientes aguardando atendimento regular.",
       color: "amber",
       icon: "clipboard",
-      to: "/admin/regular-waiting",
+      to: "/admin/lista-espera-atendimento-regular",
     },
     {
       id: 3,
@@ -26,7 +26,7 @@ const ManageAppointments: React.FC = () => {
       description: "Pacientes em atendimento protocolar.",
       color: "darkblue",
       icon: "document",
-      to: "/admin/protocol",
+      to: "/admin/lista-atendimento-protocolo",
     },
     {
       id: 4,
@@ -34,7 +34,7 @@ const ManageAppointments: React.FC = () => {
       description: "Pacientes em atendimento psicológico regular.",
       color: "coral",
       icon: "refresh",
-      to: "/admin/regular",
+      to: "/admin/lista-atendimento-regular",
     },
 
     {
@@ -43,7 +43,7 @@ const ManageAppointments: React.FC = () => {
       description: "Cadastrar e remover bolsistas e administradores.",
       color: "purple",
       icon: "shield",
-      to: "/admin/colaboradores",
+      to: "/admin/gerenciamento-colaboradores",
     },
   ];
 

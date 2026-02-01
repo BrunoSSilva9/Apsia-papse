@@ -11,7 +11,7 @@ import Collaborators from "./pages/Collaborators";
 import Relatorio from "./pages/relatorio";
 import Home from "./pages/Home";
 import Formulario from "./pages/Formulario";
-import Formulario From "./pages/Sobre";
+import Sobre from "./pages/Sobre";
 
 import { PrivateRoute } from "./pages/PrivateRoute";
 
@@ -27,12 +27,15 @@ function App() {
         <Route element={<PrivateRoute requiredRole="ADMIN" />}>
           <Route path="/admin" element={<AdministrativePanel />}>
             <Route index element={<ManageAppointments />} />
-            <Route path="colaboradores" element={<Collaborators />} />
+            <Route
+              path="gerenciamento-colaboradores"
+              element={<Collaborators />}
+            />
             <Route path="relatorios" element={<Relatorio />} />
-            <Route path="historical" element={<Historical />} />
+            <Route path="historico" element={<Historical />} />
 
             <Route
-              path="waiting-list"
+              path="lista-espera"
               element={
                 <PatientList
                   status="lista_de_espera"
@@ -49,7 +52,7 @@ function App() {
             />
 
             <Route
-              path="regular-waiting"
+              path="lista-espera-atendimento-regular"
               element={
                 <PatientList
                   status="espera_regulares"
@@ -66,7 +69,7 @@ function App() {
             />
 
             <Route
-              path="protocol"
+              path="lista-atendimento-protocolo"
               element={
                 <PatientList
                   status="atendimento_protocolo"
@@ -75,7 +78,7 @@ function App() {
                     {
                       label: "Encaminhar para outro bolsista",
                       target: "atendimento_protocolo",
-                    }, // Auto-encaminhamento
+                    },
                     {
                       label: "Encaminhar para lista de espera regular",
                       target: "espera_regulares",
@@ -87,7 +90,7 @@ function App() {
             />
 
             <Route
-              path="regular"
+              path="lista-atendimento-regular"
               element={
                 <PatientList
                   status="atendimento_regular"
@@ -102,10 +105,6 @@ function App() {
                 />
               }
             />
-
-            <Route path="relatorio" element={<Relatorio />} />
-
-            <Route path="historical" element={<Historical />} />
           </Route>
         </Route>
 
