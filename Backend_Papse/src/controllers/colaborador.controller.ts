@@ -6,7 +6,21 @@ export class ColaboradorController {
 
   public create = async (req: Request, res: Response) => {
     try {
-      const novoColaborador = await this.colaboradorService.create(req.body);
+      const { nome, matricula, senha, role, data_admissao } = req.body;
+
+      let dataFormatada;
+      if (typeof data_admissao === "string" && data_admissao.length === 10) {
+        dataFormatada = new Date(data_admissao + "T12:00:00.000Z");
+      } else {
+        dataFormatada = new Date(data_admissao);
+      }
+      const novoColaborador = await this.colaboradorService.create({
+        nome,
+        matricula,
+        senha,
+        role,
+        data_admissao: dataFormatada,
+      });
       res.status(201).json(novoColaborador);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -33,7 +47,7 @@ export class ColaboradorController {
 
     try {
       const colaborador = await this.colaboradorService.findOne(
-        parseInt(id, 10)
+        parseInt(id, 10),
       );
       res.status(200).json(colaborador);
     } catch (error: any) {
@@ -56,7 +70,7 @@ export class ColaboradorController {
     try {
       const colaboradorAtualizado = await this.colaboradorService.update(
         parseInt(id, 10),
-        req.body
+        req.body,
       );
       res.status(200).json(colaboradorAtualizado);
     } catch (error: any) {

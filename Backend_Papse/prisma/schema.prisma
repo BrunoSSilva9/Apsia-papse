@@ -23,6 +23,9 @@ model Paciente {
   data_inscricao  DateTime  @db.Date
   relato          String?   @default("SEM RELATO") @db.VarChar(500)
   curso           String?   @db.VarChar(150)
+  termo_lgpd Boolean @default(false)
+  data_aceite_termo DateTime?
+  ip_origem String? @db.VarChar(45)
 
   // Relações: Um paciente pode estar em várias listas/históricos
   ListaEspera ListaEspera[]
