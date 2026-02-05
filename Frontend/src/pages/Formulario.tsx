@@ -50,6 +50,7 @@ interface FormData {
   curso: string;
   data_nascimento: string;
   relato: string;
+  termo_aceite: boolean;
 }
 
 const Formulario = () => {
@@ -96,6 +97,7 @@ const Formulario = () => {
         telefone: data.telefone.trim(),
         curso: data.curso,
         relato: data.relato ? data.relato.trim() : "SEM RELATO",
+        termo_lgpd: true,
       };
 
       await api.post("/pacientes", payload, {
@@ -286,6 +288,46 @@ const Formulario = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors resize-none"
                   {...register("relato")}
                 ></textarea>
+              </div>
+
+              <div className="pt-2">
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600 h-32 overflow-y-auto mb-3 text-justify">
+                  <strong className="block mb-1 text-gray-800">
+                    Termo de Consentimento (LGPD)
+                  </strong>
+                  Ao selecionar a opção abaixo, autorizo o PAPSE/Unifesspa a
+                  tratar meus dados pessoais e sensíveis para fins exclusivos de
+                  triagem e atendimento psicológico. Estou ciente de que as
+                  informações são sigilosas, restritas à equipe clínica e que
+                  posso revogar este consentimento a qualquer momento. O
+                  tratamento segue a Lei nº 13.709/2018.
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="flex items-center h-5">
+                    <input
+                      id="termo_aceite"
+                      type="checkbox"
+                      className={`w-4 h-4 border rounded focus:ring-3 focus:ring-orange-300 ${errors.termo_aceite ? "border-red-500" : "border-gray-300"}`}
+                      {...register("termo_aceite", {
+                        required:
+                          "É necessário aceitar os termos para prosseguir.",
+                      })}
+                    />
+                  </div>
+                  <label
+                    htmlFor="termo_aceite"
+                    className="text-sm font-medium text-gray-700 select-none cursor-pointer"
+                  >
+                    Li e concordo com o Termo de Responsabilidade e Uso de
+                    Dados.
+                  </label>
+                </div>
+                {errors.termo_aceite && (
+                  <span className="text-red-500 text-xs mt-1 block">
+                    {errors.termo_aceite.message}
+                  </span>
+                )}
               </div>
 
               <div className="pt-2">
