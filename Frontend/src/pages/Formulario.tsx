@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import illustration from "../assets/images/formulario_illustration.png";
 import HeaderMenu from "../components/shared/HeaderMenu";
+import { CheckCircle } from "lucide-react";
 
 const CURSOS_UNIFESSPA = [
   "Administração",
@@ -55,6 +56,8 @@ interface FormData {
 
 const Formulario = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const navigate = useNavigate();
 
   const {
     register,
@@ -103,8 +106,7 @@ const Formulario = () => {
       await api.post("/pacientes", payload, {
         headers: { "Content-Type": "application/json" },
       });
-
-      alert("Inscrição realizada com sucesso!");
+      setShowSuccessModal(true);
       reset();
     } catch (error: any) {
       console.error("Erro completo:", error);
@@ -114,6 +116,10 @@ const Formulario = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+  const handleCloseModal = () => {
+    setShowSuccessModal(false);
+    navigate("/");
   };
 
   return (
@@ -384,6 +390,32 @@ const Formulario = () => {
           </div>
         </div>
       </div>
+
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center relative transform transition-all scale-100">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-10 h-10 text-green-600" />
+            </div>
+
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              Inscrição Confirmada!
+            </h3>
+
+            <p className="text-gray-600 mb-8 leading-relaxed">
+              Recebemos seus dados com sucesso. A equipe do PAPSE entrará em
+              contato em breve através do telefone informado.
+            </p>
+
+            <button
+              onClick={handleCloseModal}
+              className="w-full bg-[#FF7A50] hover:bg-[#e05d35] text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+            >
+              Voltar para o Início
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
