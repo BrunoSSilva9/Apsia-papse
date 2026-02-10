@@ -1,0 +1,11 @@
+services:
+  frontend-papse:
+    build: .
+    container_name: frontend-papse
+    restart: always
+    networks:
+      - papse_network
+
+networks:
+  papse_network:
+    external: true

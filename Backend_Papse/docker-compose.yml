@@ -2,20 +2,23 @@ services:
   app:
     container_name: api-papse
     build: .
-    ports:
-      - "3001:3000"
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: mysql://root:supersecreto@db:3306/papse_db
-      JWT_SECRET: supersecreto
+      - DATABASE_URL=mysql://root:supersecreto@db:3306/papse_db
+      - JWT_SECRET=supersecreto
     dns:
       - 8.8.8.8
-    depends_on:
-      - db
+    restart: always
+    ports:
+      - "3000:3000"
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
-    # command: tail -f /dev/null
-
+    depends_on:
+      - db
+    networks:
+      - papse_network
   db:
     image: mysql:8.0
     container_name: mysql-db
@@ -24,10 +27,13 @@ services:
       MYSQL_DATABASE: papse_db
       MYSQL_USER: docker_user
       MYSQL_PASSWORD: supersecreto
-    ports:
-      - "3307:3306"
+    restart: always
     volumes:
       - mysql-data:/var/lib/mysql
-
+    networks:
+      - papse_network
+networks:
+  papse_network:
+    external: true
 volumes:
   mysql-data:
