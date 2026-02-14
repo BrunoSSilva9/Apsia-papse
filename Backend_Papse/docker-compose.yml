@@ -4,9 +4,6 @@ services:
     build: .
     env_file:
       - .env
-    environment:
-      - DATABASE_URL=mysql://root:supersecreto@db:3306/papse_db
-      - JWT_SECRET=supersecreto
     dns:
       - 8.8.8.8
     restart: always
@@ -22,11 +19,8 @@ services:
   db:
     image: mysql:8.0
     container_name: mysql-db
-    environment:
-      MYSQL_ROOT_PASSWORD: supersecreto
-      MYSQL_DATABASE: papse_db
-      MYSQL_USER: docker_user
-      MYSQL_PASSWORD: supersecreto
+    env_file:
+      - .env
     restart: always
     volumes:
       - mysql-data:/var/lib/mysql

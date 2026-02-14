@@ -1,6 +1,9 @@
 services:
   frontend-papse:
-    build: .
+    build:
+      context: .
+      args:
+        - VITE_API_URL=${VITE_API_URL}
     container_name: frontend-papse
     restart: always
     networks:

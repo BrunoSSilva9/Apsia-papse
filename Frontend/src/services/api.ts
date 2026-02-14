@@ -5,7 +5,7 @@ import axios, {
 } from "axios";
 
 const baseURL =
-  "https://api.projetopapse.org/api";
+  import.meta.env.VITE_API_URL || "https://api.projetopapse.org/api";
 
 const api = axios.create({
   baseURL,
