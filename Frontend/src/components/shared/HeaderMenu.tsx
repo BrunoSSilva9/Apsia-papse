@@ -41,10 +41,7 @@ const HeaderMenu = ({ variant = "guest" }: HeaderMenuProps) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  const guestItems: MenuItem[] = [
-    { label: "LOGIN", path: "/login" },
-    { label: "UNIFESSPA", externalUrl: "https://www.unifesspa.edu.br/" },
-  ];
+  const guestItems: MenuItem[] = [{ label: "LOGIN", path: "/login" }];
 
   const loggedInItems: MenuItem[] = [
     { label: "HOME", path: "/" },
@@ -64,11 +61,11 @@ const HeaderMenu = ({ variant = "guest" }: HeaderMenuProps) => {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl py-2 z-50 border border-gray-100 animate-fade-in">
+        <div className="absolute top-full right-0 mt-2 w-32 bg-white rounded-xl shadow-xl py-2 z-50 border border-gray-100 animate-fade-in">
           <ul className="flex flex-col">
             {itemsToShow.map((item, index) => {
               const baseClasses =
-                "block w-full text-left px-6 py-3 text-gray-800 font-nunito font-bold uppercase hover:text-orange-500 hover:bg-orange-50 transition-colors text-sm";
+                "block w-full text-left px-4 py-2 text-gray-800 font-nunito font-bold uppercase hover:text-orange-500 hover:bg-orange-50 transition-colors text-sm";
 
               if (item.externalUrl) {
                 return (

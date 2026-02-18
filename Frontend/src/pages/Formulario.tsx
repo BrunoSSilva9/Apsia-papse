@@ -123,7 +123,7 @@ const Formulario = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FF6B3D] overflow-hidden flex flex-col relative font-sans">
+    <div className="min-h-screen bg-[#FF6B3D] flex flex-col relative font-sans">
       <nav className="flex flex-wrap justify-between items-center p-8 relative z-50 text-white">
         <div className="flex gap-4 md:gap-8 items-center">
           <Link
@@ -297,7 +297,7 @@ const Formulario = () => {
               </div>
 
               <div className="pt-2">
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600 h-32 overflow-y-auto mb-3 text-justify">
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600 h-32 overflow-y-auto scroll-hidden mb-3 text-justify">
                   <strong className="block mb-1 text-gray-800">
                     Termo de Consentimento (LGPD)
                   </strong>
