@@ -123,7 +123,7 @@ const Formulario = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FF6B3D] flex flex-col relative font-sans">
+    <div className="min-h-screen bg-[#FF6B3D] flex flex-col relative font-sans overflow-hidden">
       <nav className="flex flex-wrap justify-between items-center p-8 relative z-50 text-white">
         <div className="flex gap-4 md:gap-8 items-center">
           <Link
@@ -153,7 +153,7 @@ const Formulario = () => {
 
       <div className="flex flex-1 relative">
         <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-8 z-10">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 lg:p-8">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 lg:p-8 max-h-[85vh] md:max-h-[90vh] overflow-y-auto scroll-hidden">
             <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
               Ficha de Inscrição
             </h2>
@@ -336,7 +336,7 @@ const Formulario = () => {
                 )}
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 pb-10">
                 <button
                   type="submit"
                   disabled={isSubmitting}
