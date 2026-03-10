@@ -78,18 +78,22 @@ export class AuthService {
     const colaborador = await prisma.colaborador.findFirst({
       where: {
         resetToken: token,
-        resetTokenExpires: { gt: new Date() },
       },
     });
 
     if (!colaborador) {
-      throw new Error("Token inválido ou expirado.");
+      throw new Error("Token inválido ou não encontrado.");
+    }
+
+    const agora = new Date();
+    if (!colaborador.resetTokenExpires || colaborador.resetTokenExpires < agora) {
+      throw new Error("Token expirado. Por favor, solicite um novo link.");
     }
 
     const hashedSenha = await bcrypt.hash(novaSenha, 10);
 
     await prisma.colaborador.update({
-      where: { idBolsista: colaborador.idBolsista },
+      where: { idBolsista: colaborador.idBolsista }, 
       data: {
         senha: hashedSenha,
         resetToken: null,
