@@ -1,11 +1,11 @@
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import HeaderMenu from "../components/shared/HeaderMenu";
 import imgLogin from "../assets/images/img-login.svg";
 
 interface LoginFormInputs {
-  matricula: string;
+  email: string;
   senha_pura: string;
 }
 
@@ -16,7 +16,7 @@ const Login = () => {
 
   const onSubmit = async (data: LoginFormInputs) => {
     try {
-      await signIn(data.matricula, data.senha_pura);
+      await signIn(data.email, data.senha_pura);
 
       const userStr = localStorage.getItem("@Papse:user");
 
@@ -29,7 +29,7 @@ const Login = () => {
         }
       }
     } catch {
-      alert("Falha no login. Verifique sua matrícula e senha.");
+      alert("Falha no login. Verifique seu email e senha.");
     }
   };
 
@@ -44,10 +44,10 @@ const Login = () => {
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="mb-8">
               <label
-                htmlFor="matricula"
+                htmlFor="email"
                 className="mb-2 block text-sm font-medium text-gray-700"
               >
-                Matrícula
+                E-mail
               </label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
@@ -67,11 +67,11 @@ const Login = () => {
                   </svg>
                 </div>
                 <input
-                  type="text"
-                  id="matricula"
-                  placeholder="Digite sua matrícula"
+                  type="email"
+                  id="email"
+                  placeholder="Digite seu e-mail"
                   className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-4 text-base font-normal text-gray-900 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-500/20 transition-all"
-                  {...register("matricula", { required: true })}
+                  {...register("email", { required: true })}
                 />
               </div>
             </div>
@@ -114,6 +114,14 @@ const Login = () => {
                   className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-4 text-base font-normal text-gray-900 placeholder-gray-400 focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-500/20 transition-all"
                   {...register("senha_pura", { required: true })}
                 />
+              </div>
+              <div className="mt-3 text-right">
+                <Link
+                  to="/esqueci-senha"
+                  className="text-sm font-semibold text-[#FF6B3D] hover:text-[#e05d35] transition-colors"
+                >
+                  Esqueci minha senha
+                </Link>
               </div>
             </div>
 

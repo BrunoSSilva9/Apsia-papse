@@ -6,10 +6,10 @@ export class AuthController {
 
   public login = async (req: Request, res: Response) => {
     try {
-      const { matricula, senha_ } = req.body;
+      const { email, senha } = req.body;
       const resultado = await this.authService.login({
-        matricula: matricula,
-        senha_bolsista: senha_,
+        email: email,
+        senha: senha,
       });
       res.status(200).json(resultado);
     } catch (error: any) {
@@ -17,6 +17,30 @@ export class AuthController {
         return res.status(401).json({ message: error.message });
       }
       res.status(500).json({ message: error.message });
+    }
+  };
+  public forgotPassword = async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      const resultado = await this.authService.forgotPassword(email);
+      res.status(200).json(resultado);
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ message: "Erro ao processar solicitação de recuperação." });
+    }
+  };
+
+  public resetPassword = async (req: Request, res: Response) => {
+    try {
+      const { token, novaSenha } = req.body;
+      const resultado = await this.authService.resetPassword(token, novaSenha);
+      res.status(200).json(resultado);
+    } catch (error: any) {
+      if (error.message.includes("inválido ou expirado")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Erro ao redefinir a senha." });
     }
   };
 }

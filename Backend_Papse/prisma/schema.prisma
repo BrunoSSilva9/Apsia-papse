@@ -40,10 +40,13 @@ model Colaborador {
   idBolsista    Int      @id @default(autoincrement())
   nome          String   @db.VarChar(150)
   matricula     String   @db.VarChar(45) @unique
+  email         String   @unique
   data_admissao DateTime @db.Date
   data_saida    DateTime? @db.Date
   senha         String   @db.VarChar(255)
   role          Role     @default(BOLSISTA)
+  resetToken    String?
+  resetTokenExpires DateTime?
 
   // Relações: Um colaborador pode estar em várias listas/históricos
   ListaRegular ListaRegular[]

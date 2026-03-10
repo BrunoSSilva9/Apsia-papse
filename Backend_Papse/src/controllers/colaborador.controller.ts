@@ -6,7 +6,7 @@ export class ColaboradorController {
 
   public create = async (req: Request, res: Response) => {
     try {
-      const { nome, matricula, senha, role, data_admissao } = req.body;
+      const { nome, matricula, email, senha, role, data_admissao } = req.body;
 
       let dataFormatada;
       if (typeof data_admissao === "string" && data_admissao.length === 10) {
@@ -17,6 +17,7 @@ export class ColaboradorController {
       const novoColaborador = await this.colaboradorService.create({
         nome,
         matricula,
+        email,
         senha,
         role,
         data_admissao: dataFormatada,

@@ -16,12 +16,14 @@ import {
   AlertTriangle,
   CheckCircle,
   AlertCircle,
+  Mail,
 } from "lucide-react";
 
 interface Colaborador {
   idBolsista: number;
   nome: string;
   matricula: string;
+  email: string;
   role: string;
   data_admissao: string;
   data_saida?: string;
@@ -38,6 +40,7 @@ const Collaborators = () => {
 
   const [formData, setFormData] = useState({
     nome: "",
+    email: "",
     matricula: "",
     data_admissao: new Date().toISOString().split("T")[0],
     senha: "",
@@ -79,7 +82,12 @@ const Collaborators = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "matricula") {
+      const apenasNumeros = value.replace(/\D/g, "");
+      setFormData((prev) => ({ ...prev, [name]: apenasNumeros }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
     if (formErrors[name])
       setFormErrors((prev: any) => ({ ...prev, [name]: "" }));
   };
@@ -87,8 +95,17 @@ const Collaborators = () => {
   const validateForm = () => {
     const errors: any = {};
     if (!formData.nome.trim()) errors.nome = "Nome é obrigatório";
-    if (!formData.matricula.trim())
+
+    if (!formData.email.trim()) {
+      errors.email = "E-mail é obrigatório";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "E-mail inválido";
+    }
+    if (!formData.matricula.trim()) {
       errors.matricula = "Matrícula é obrigatória";
+    } else if (!/^\d+$/.test(formData.matricula)) {
+      errors.matricula = "Apenas números são permitidos";
+    }
     if (!formData.data_admissao) errors.data_admissao = "Data obrigatória";
     if (!formData.senha) errors.senha = "Senha obrigatória";
     else if (formData.senha.length < 6) errors.senha = "Mínimo 6 caracteres";
@@ -110,6 +127,7 @@ const Collaborators = () => {
     try {
       await createColaborador({
         nome: formData.nome.trim(),
+        email: formData.email.trim(),
         matricula: formData.matricula.trim(),
         data_admissao: formData.data_admissao,
         senha: formData.senha,
@@ -123,6 +141,7 @@ const Collaborators = () => {
         setSuccessMessage("");
         setFormData({
           nome: "",
+          email: "",
           matricula: "",
           data_admissao: new Date().toISOString().split("T")[0],
           senha: "",
@@ -221,6 +240,7 @@ const Collaborators = () => {
             )}
           </section>
 
+          {/* Seção BOLSISTAS */}
           <section>
             <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-2">
               <School className="text-orange-500" size={24} />
@@ -271,7 +291,10 @@ const Collaborators = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form
+              onSubmit={handleSubmit}
+              className="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar"
+            >
               {successMessage && (
                 <div className="bg-green-50 text-green-700 p-3 rounded flex items-center gap-2">
                   <CheckCircle size={18} /> {successMessage}
@@ -291,12 +314,31 @@ const Collaborators = () => {
                   name="nome"
                   value={formData.nome}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-bluem-500 outline-none"
                   placeholder="Ex: João Silva"
                 />
                 {formErrors.nome && (
                   <span className="text-xs text-red-500">
                     {formErrors.nome}
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  E-mail de Acesso
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Ex: joao@projetopapse.org"
+                />
+                {formErrors.email && (
+                  <span className="text-xs text-red-500">
+                    {formErrors.email}
                   </span>
                 )}
               </div>
@@ -310,6 +352,8 @@ const Collaborators = () => {
                     name="matricula"
                     value={formData.matricula}
                     onChange={handleInputChange}
+                    inputMode="numeric"
+                    placeholder="Apenas números"
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                   {formErrors.matricula && (
@@ -474,6 +518,10 @@ const CollaboratorCard = ({
       </div>
 
       <div className="space-y-2 text-sm text-gray-600 mb-4">
+        <p className="flex items-center gap-2">
+          <Mail size={16} className="text-gray-400" />
+          {data.email}
+        </p>
         <p>
           <strong>Matrícula:</strong> {data.matricula}
         </p>

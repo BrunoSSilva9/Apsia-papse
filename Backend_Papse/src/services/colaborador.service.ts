@@ -5,6 +5,7 @@ import { Prisma, Role } from "@prisma/client";
 export interface CreateColaboradorDto {
   nome: string;
   matricula: string;
+  email: string;
   data_admissao: Date;
   data_saida?: Date | null;
   senha: string;
@@ -31,8 +32,13 @@ export class ColaboradorService {
       const { senha, ...colaboradorSemSenha } = colaborador;
       return colaboradorSemSenha;
     } catch (error: any) {
-      if (error.code === "P2002" && error.meta?.target.includes("matricula")) {
-        throw new Error("Esta matrícula já está cadastrada.");
+      if (error.code === "P2002") {
+        if (error.meta?.target?.includes("matricula")) {
+          throw new Error("Esta matrícula já está cadastrada.");
+        }
+        if (error.meta?.target?.includes("email")) {
+          throw new Error("Este e-mail já está cadastrado.");
+        }
       }
       console.error("Erro ao criar colaborador:", error);
       throw new Error("Não foi possível criar o colaborador.");
@@ -74,7 +80,19 @@ export class ColaboradorService {
         },
       });
       return colaborador;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.code === "P2002") {
+        if (error.meta?.target?.includes("matricula")) {
+          throw new Error(
+            "Esta matrícula já está sendo utilizada por outro colaborador.",
+          );
+        }
+        if (error.meta?.target?.includes("email")) {
+          throw new Error(
+            "Este e-mail já está sendo utilizado por outro colaborador.",
+          );
+        }
+      }
       console.error(`Erro ao atualizar colaborador com ID ${id}:`, error);
       throw new Error("Colaborador não encontrado ou dados inválidos.");
     }

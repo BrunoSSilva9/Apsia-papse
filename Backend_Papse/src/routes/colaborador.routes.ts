@@ -7,35 +7,35 @@ const router = Router();
 const colaboradorController = new ColaboradorController();
 
 router.post(
-  "/colaboradores", /*
+  "/colaboradores" /*,
   authMiddleware,
-  checkRole(["ADMIN"]), */
-  colaboradorController.create
+  checkRole(["ADMIN"])*/,
+  colaboradorController.create,
 );
 
 router.get(
-  "/colaboradores", /*
+  "/colaboradores",
   authMiddleware,
-  checkRole(["ADMIN"]), */
-  colaboradorController.findAll
+  checkRole(["ADMIN"]),
+  colaboradorController.findAll,
 );
 router.get(
   "/colaboradores/:id",
   authMiddleware,
   checkRole(["ADMIN"]),
-  colaboradorController.findOne
+  colaboradorController.findOne,
 );
 router.put(
   "/colaboradores/:id",
   authMiddleware,
   checkRole(["ADMIN"]),
-  colaboradorController.update
+  colaboradorController.update,
 );
 router.delete(
   "/colaboradores/:id",
   authMiddleware,
   checkRole(["ADMIN"]),
-  colaboradorController.delete
+  colaboradorController.delete,
 );
 
 export default router;

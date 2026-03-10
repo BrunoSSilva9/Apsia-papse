@@ -12,6 +12,8 @@ import Relatorio from "./pages/relatorio";
 import Home from "./pages/Home";
 import Formulario from "./pages/Formulario";
 import Sobre from "./pages/Sobre";
+import EsqueciSenha from "./pages/EsqueciSenha";
+import RedefinirSenha from "./pages/RedefinirSenha";
 
 import { PrivateRoute } from "./pages/PrivateRoute";
 
@@ -23,6 +25,8 @@ function App() {
         <Route path="/sobre" element={<Sobre />} />
         <Route path="/login" element={<Login />} />
         <Route path="/formulario" element={<Formulario />} />
+        <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+        <Route path="/redefinir-senha" element={<RedefinirSenha />} />
 
         <Route element={<PrivateRoute requiredRole="ADMIN" />}>
           <Route path="/admin" element={<AdministrativePanel />}>
