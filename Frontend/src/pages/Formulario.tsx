@@ -433,7 +433,7 @@ const Formulario = () => {
 
             <p className="text-gray-600 mb-8 leading-relaxed">
               Recebemos seus dados com sucesso. A equipe do PAPSE entrará em
-              contato em breve através do telefone informado.
+              contato em breve através do telefone ou email informado.
             </p>
 
             <button
