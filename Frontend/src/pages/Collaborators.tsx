@@ -17,6 +17,7 @@ import {
   CheckCircle,
   AlertCircle,
   Mail,
+  Archive,
 } from "lucide-react";
 
 interface Colaborador {
@@ -35,6 +36,9 @@ const Collaborators = () => {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // Estado para controlar a exibição dos inativos
+  const [showInactives, setShowInactives] = useState(false);
+
   const [collaboratorToDelete, setCollaboratorToDelete] =
     useState<Colaborador | null>(null);
 
@@ -163,22 +167,26 @@ const Collaborators = () => {
     setDeleting(true);
     try {
       await deleteColaborador(collaboratorToDelete.idBolsista);
-      setSuccessMessage("Colaborador excluído!");
+      setSuccessMessage("Colaborador inativado com sucesso!");
       await loadCollaborators();
       setTimeout(() => setShowDeleteModal(false), 1000);
-    } catch {
-      alert(
-        "Erro ao excluir. Verifique se o colaborador possui vínculos ativos.",
-      );
+    } catch (error: any) {
+      const msgErro =
+        error.response?.data?.message ||
+        "Erro ao processar a exclusão do colaborador.";
+      alert(msgErro);
     } finally {
       setDeleting(false);
     }
   };
 
-  const admins = collaborators.filter((c) => c.role?.toUpperCase() === "ADMIN");
-  const bolsistas = collaborators.filter(
-    (c) => c.role?.toUpperCase() === "BOLSISTA",
+  const activeAdmins = collaborators.filter(
+    (c) => c.role?.toUpperCase() === "ADMIN" && !c.data_saida,
   );
+  const activeBolsistas = collaborators.filter(
+    (c) => c.role?.toUpperCase() === "BOLSISTA" && !c.data_saida,
+  );
+  const inactiveCollaborators = collaborators.filter((c) => c.data_saida);
 
   return (
     <div className="w-full font-nunito p-6">
@@ -191,13 +199,29 @@ const Collaborators = () => {
             Administre os acessos de administradores e bolsistas.
           </p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-md font-medium"
-        >
-          <Plus size={20} />
-          Novo Colaborador
-        </button>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Botão de Exibir Inativos */}
+          <button
+            onClick={() => setShowInactives(!showInactives)}
+            className={`px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm font-medium border ${
+              showInactives
+                ? "bg-gray-200 text-gray-800 border-gray-300"
+                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            <Archive size={20} />
+            {showInactives ? "Ocultar Inativos" : "Ver Inativos"}
+          </button>
+
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-blue-600 text-white px-5 py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors shadow-md font-medium"
+          >
+            <Plus size={20} />
+            Novo Colaborador
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -206,25 +230,25 @@ const Collaborators = () => {
         </div>
       ) : (
         <div className="space-y-10">
-          {/* Seção ADMINS */}
+          {/* Seção ADMINS (Somente Ativos) */}
           <section>
             <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-2">
               <Shield className="text-blue-600" size={24} />
               <h2 className="text-xl font-bold text-gray-700">
                 Administradores{" "}
                 <span className="text-sm font-normal text-gray-500">
-                  ({admins.length})
+                  ({activeAdmins.length})
                 </span>
               </h2>
             </div>
 
-            {admins.length === 0 ? (
+            {activeAdmins.length === 0 ? (
               <p className="text-gray-500 italic">
-                Nenhum administrador encontrado.
+                Nenhum administrador ativo encontrado.
               </p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {admins.map((admin) => (
+                {activeAdmins.map((admin) => (
                   <CollaboratorCard
                     key={admin.idBolsista}
                     data={admin}
@@ -240,25 +264,25 @@ const Collaborators = () => {
             )}
           </section>
 
-          {/* Seção BOLSISTAS */}
+          {/* Seção BOLSISTAS (Somente Ativos) */}
           <section>
             <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-2">
               <School className="text-orange-500" size={24} />
               <h2 className="text-xl font-bold text-gray-700">
-                Bolsistas{" "}
+                Bolsistas e Voluntários{" "}
                 <span className="text-sm font-normal text-gray-500">
-                  ({bolsistas.length})
+                  ({activeBolsistas.length})
                 </span>
               </h2>
             </div>
 
-            {bolsistas.length === 0 ? (
+            {activeBolsistas.length === 0 ? (
               <p className="text-gray-500 italic">
-                Nenhum bolsista cadastrado.
+                Nenhum bolsista ativo cadastrado.
               </p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {bolsistas.map((bolsista) => (
+                {activeBolsistas.map((bolsista) => (
                   <CollaboratorCard
                     key={bolsista.idBolsista}
                     data={bolsista}
@@ -273,6 +297,40 @@ const Collaborators = () => {
               </div>
             )}
           </section>
+
+          {/* Seção INATIVOS (Exibida Apenas se o botão for clicado) */}
+          {showInactives && (
+            <section className="mt-12 bg-gray-50 p-6 rounded-xl border border-gray-200 animate-fade-in">
+              <div className="flex items-center gap-2 mb-4 border-b border-gray-300 pb-2">
+                <Archive className="text-gray-500" size={24} />
+                <h2 className="text-xl font-bold text-gray-700">
+                  Colaboradores Inativos{" "}
+                  <span className="text-sm font-normal text-gray-500">
+                    ({inactiveCollaborators.length})
+                  </span>
+                </h2>
+              </div>
+
+              {inactiveCollaborators.length === 0 ? (
+                <p className="text-gray-500 italic">
+                  Não há registros de colaboradores inativos.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {inactiveCollaborators.map((inativo) => (
+                    <CollaboratorCard
+                      key={inativo.idBolsista}
+                      data={inativo}
+                      onDelete={() => {}} 
+                      type={inativo.role?.toUpperCase() || "BOLSISTA"}
+                      dateFormatter={formatDate}
+                      isInactive={true} 
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
         </div>
       )}
 
@@ -314,7 +372,7 @@ const Collaborators = () => {
                   name="nome"
                   value={formData.nome}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-bluem-500 outline-none"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
                   placeholder="Ex: João Silva"
                 />
                 {formErrors.nome && (
@@ -459,9 +517,9 @@ const Collaborators = () => {
               Excluir Colaborador?
             </h3>
             <p className="text-gray-600 mb-6">
-              Você está prestes a remover{" "}
-              <strong>{collaboratorToDelete.nome}</strong>. Esta ação não pode
-              ser desfeita.
+              Você está prestes a inativar{" "}
+              <strong>{collaboratorToDelete.nome}</strong>. Esta ação bloqueará
+              o acesso desta pessoa.
             </p>
             <div className="flex justify-center gap-3">
               <button
@@ -475,7 +533,7 @@ const Collaborators = () => {
                 disabled={deleting}
                 className="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium disabled:opacity-50"
               >
-                {deleting ? "Excluindo..." : "Sim, Excluir"}
+                {deleting ? "Inativando..." : "Sim, Inativar"}
               </button>
             </div>
           </div>
@@ -490,26 +548,45 @@ const CollaboratorCard = ({
   onDelete,
   type,
   dateFormatter,
+  isInactive = false, 
 }: {
   data: Colaborador;
   onDelete: () => void;
   type: string;
   dateFormatter: (d: string) => string;
+  isInactive?: boolean;
 }) => {
   const isBolsista = type === "BOLSISTA";
+
+  const iconBgColor = isInactive
+    ? "bg-gray-200 text-gray-500"
+    : isBolsista
+      ? "bg-orange-100 text-orange-600"
+      : "bg-blue-100 text-blue-600";
+
+  const badgeColor = isInactive
+    ? "bg-gray-100 text-gray-600 border border-gray-200"
+    : isBolsista
+      ? "bg-orange-50 text-orange-700"
+      : "bg-blue-50 text-blue-700";
+
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow relative group">
+    <div
+      className={`bg-white border rounded-xl shadow-sm p-5 transition-shadow relative group ${isInactive ? "border-gray-200 opacity-80" : "border-gray-200 hover:shadow-md"}`}
+    >
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-3">
-          <div
-            className={`p-2 rounded-full ${isBolsista ? "bg-orange-100 text-orange-600" : "bg-blue-100 text-blue-600"}`}
-          >
-            <User size={24} />
+          <div className={`p-2 rounded-full ${iconBgColor}`}>
+            {isInactive ? <Archive size={24} /> : <User size={24} />}
           </div>
           <div>
-            <h3 className="font-bold text-gray-800 text-base">{data.nome}</h3>
+            <h3
+              className={`font-bold text-base ${isInactive ? "text-gray-600 line-through decoration-gray-300" : "text-gray-800"}`}
+            >
+              {data.nome}
+            </h3>
             <span
-              className={`text-xs font-bold px-2 py-0.5 rounded-full ${isBolsista ? "bg-orange-50 text-orange-700" : "bg-blue-50 text-blue-700"}`}
+              className={`text-xs font-bold px-2 py-0.5 rounded-full ${badgeColor}`}
             >
               {type}
             </span>
@@ -530,20 +607,23 @@ const CollaboratorCard = ({
           Admissão: {dateFormatter(data.data_admissao)}
         </p>
         {data.data_saida && (
-          <p className="text-red-500 font-medium text-xs">
+          <p className="text-red-500 font-medium text-xs flex items-center gap-1 bg-red-50 p-1.5 rounded-md inline-flex mt-1">
+            <AlertCircle size={14} />
             Saída: {dateFormatter(data.data_saida)}
           </p>
         )}
       </div>
 
-      <div className="pt-3 border-t border-gray-100 flex justify-end">
-        <button
-          onClick={onDelete}
-          className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors flex items-center gap-1 text-sm group-hover:opacity-100 opacity-60"
-        >
-          <Trash2 size={16} /> Excluir
-        </button>
-      </div>
+      {!isInactive && (
+        <div className="pt-3 border-t border-gray-100 flex justify-end">
+          <button
+            onClick={onDelete}
+            className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors flex items-center gap-1 text-sm group-hover:opacity-100 opacity-60"
+          >
+            <Trash2 size={16} /> Inativar
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -6,12 +6,7 @@ import { checkRole } from "../middlewares/checkRole.middleware.js";
 const router = Router();
 const colaboradorController = new ColaboradorController();
 
-router.post(
-  "/colaboradores" /*,
-  authMiddleware,
-  checkRole(["ADMIN"])*/,
-  colaboradorController.create,
-);
+router.post("/colaboradores", colaboradorController.create);
 
 router.get(
   "/colaboradores",

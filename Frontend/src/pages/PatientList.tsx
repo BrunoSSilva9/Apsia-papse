@@ -79,7 +79,7 @@ const PatientList = ({
     try {
       const response = await getBolsistas();
       const filtered = response.data.filter(
-        (b: any) => b.role?.toUpperCase() === "BOLSISTA",
+        (b: any) => b.role?.toUpperCase() === "BOLSISTA" && !b.data_saida,
       );
       setBolsistas(filtered);
     } catch (error) {
@@ -336,7 +336,9 @@ const PatientList = ({
             <div className="bg-gray-200 p-1 rounded">
               <ChevronRight size={16} />
             </div>{" "}
-            Outras listas
+            <Link to="/admin" className="hover:text-blue-700">
+              Outras listas
+            </Link>
           </div>
         </div>
 

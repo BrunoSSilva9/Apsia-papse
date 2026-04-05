@@ -15,6 +15,10 @@ export class AuthService {
       where: { email: data.email },
     });
 
+    if (!colaborador || colaborador.data_saida !== null) {
+      throw new Error("E-mail inválido, senha incorreta ou conta inativa.");
+    }
+
     if (!colaborador) {
       throw new Error("Email ou senha inválidos.");
     }

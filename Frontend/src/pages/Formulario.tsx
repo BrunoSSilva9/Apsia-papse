@@ -46,6 +46,7 @@ const CURSOS_UNIFESSPA = [
 
 interface FormData {
   nome: string;
+  email: string;
   matricula: string;
   telefone: string;
   curso: string;
@@ -94,6 +95,7 @@ const Formulario = () => {
 
       const payload = {
         nome: data.nome.trim(),
+        email: data.email.trim(),
         matricula: data.matricula.trim(),
         data_nascimento: new Date(data.data_nascimento).toISOString(),
         data_inscricao: new Date().toISOString(),
@@ -176,6 +178,33 @@ const Formulario = () => {
                 {errors.nome && (
                   <span className="text-red-500 text-xs mt-1">
                     {errors.nome.message}
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  E-mail
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  placeholder="Digite seu e-mail"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:outline-none transition-colors ${errors.email ? "border-red-500 focus:ring-red-200" : "border-gray-300 focus:ring-orange-500 focus:border-orange-500"}`}
+                  {...register("email", {
+                    required: "E-mail é obrigatório",
+                    pattern: {
+                      value: /\S+@\S+\.\S+/,
+                      message: "Formato de e-mail inválido",
+                    },
+                  })}
+                />
+                {errors.email && (
+                  <span className="text-red-500 text-xs mt-1">
+                    {errors.email.message}
                   </span>
                 )}
               </div>
@@ -301,7 +330,7 @@ const Formulario = () => {
                   <strong className="block mb-1 text-gray-800">
                     Termo de Consentimento (LGPD)
                   </strong>
-                  Ao selecionar a opção abaixo, autorizo o PAPSE/Unifesspa a
+                  Ao selecionar a opção abaixo, autorizo o sistema PAPSE a
                   tratar meus dados pessoais e sensíveis para fins exclusivos de
                   triagem e atendimento psicológico. Estou ciente de que as
                   informações são sigilosas, restritas à equipe clínica e que

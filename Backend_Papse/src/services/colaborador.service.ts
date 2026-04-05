@@ -100,12 +100,38 @@ export class ColaboradorService {
 
   async delete(id: number) {
     try {
-      await prisma.colaborador.delete({
+      const emProtocolo = await prisma.protocolo.count({
         where: { idBolsista: id },
       });
-    } catch (error) {
-      console.error(`Erro ao deletar colaborador com ID ${id}:`, error);
-      throw new Error("Colaborador não encontrado.");
+      const emRegular = await prisma.regular.count({
+        where: { idBolsista: id },
+      });
+      const emListaRegular = await prisma.listaRegular.count({
+        where: { idBolsista: id },
+      });
+
+      if (emProtocolo > 0 || emRegular > 0 || emListaRegular > 0) {
+        throw new Error("VINCULO_ATIVO");
+      }
+
+
+      await prisma.colaborador.update({
+        where: { idBolsista: id },
+        data: {
+          data_saida: new Date(),
+          senha: "INATIVO_" + Math.random().toString(), 
+          resetToken: null,
+          resetTokenExpires: null,
+        },
+      });
+    } catch (error: any) {
+      if (error.message === "VINCULO_ATIVO") {
+        throw new Error(
+          "Este bolsista ainda possui pacientes ativos. Transfira os pacientes antes de removê-lo.",
+        );
+      }
+      console.error(`Erro ao inativar colaborador com ID ${id}:`, error);
+      throw new Error("Erro interno ao inativar o colaborador.");
     }
   }
 }

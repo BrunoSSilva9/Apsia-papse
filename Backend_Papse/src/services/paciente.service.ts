@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 
 export interface CreatePacienteDto {
   nome: string;
+  email: string;
   matricula: string;
   data_nascimento: Date;
   data_inscricao: Date;
@@ -32,17 +33,17 @@ export class PacienteService {
           });
 
           return paciente;
-        }
+        },
       );
       return novoPaciente;
     } catch (error) {
       console.error(
         "Erro ao criar paciente e adicionar à lista de espera:",
-        error
+        error,
       );
 
       throw new Error(
-        "Não foi possível criar o paciente e adicioná-lo à lista de espera."
+        "Não foi possível criar o paciente e adicioná-lo à lista de espera.",
       );
     }
   }

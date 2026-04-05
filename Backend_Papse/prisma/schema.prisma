@@ -17,6 +17,7 @@ enum Role {
 model Paciente {
   idPaciente      Int       @id @default(autoincrement())
   nome            String    @db.VarChar(150)
+  email           String    @db.VarChar(255)
   matricula       String    @db.VarChar(45)
   data_nascimento DateTime  @db.Date
   telefone        String?   @db.VarChar(11) 
@@ -73,7 +74,7 @@ model ListaRegular {
 
   // Relação com Colaborador
   idBolsista     Int
-  colaborador    Colaborador @relation(fields: [idBolsista], references: [idBolsista], onDelete: Cascade)
+  colaborador    Colaborador @relation(fields: [idBolsista], references: [idBolsista], onDelete: Restrict)
 }
 
 model Protocolo {
@@ -87,7 +88,7 @@ model Protocolo {
   
   // Relação com Colaborador
   idBolsista              Int
-  colaborador             Colaborador @relation(fields: [idBolsista], references: [idBolsista], onDelete: Cascade)
+  colaborador             Colaborador @relation(fields: [idBolsista], references: [idBolsista], onDelete: Restrict)
 }
 
 model Regular {
@@ -101,7 +102,7 @@ model Regular {
   
   // Relação com Colaborador
   idBolsista              Int
-  colaborador             Colaborador @relation(fields: [idBolsista], references: [idBolsista], onDelete: Cascade)
+  colaborador             Colaborador @relation(fields: [idBolsista], references: [idBolsista], onDelete: Restrict)
 }
 
 model Historico {
@@ -114,7 +115,7 @@ model Historico {
   
   // Relação com Colaborador (último bolsista)
   id_ultimo_bolsista Int
-  colaborador        Colaborador @relation(fields: [id_ultimo_bolsista], references: [idBolsista], onDelete: Cascade)
+  colaborador        Colaborador @relation(fields: [id_ultimo_bolsista], references: [idBolsista], onDelete: Restrict)
 }
 
 model RelatorioEvolutivo {
@@ -128,5 +129,5 @@ model RelatorioEvolutivo {
 
   // Relação com Colaborador (quem escreveu)
   idBolsista      Int
-  colaborador     Colaborador @relation(fields: [idBolsista], references: [idBolsista], onDelete: Cascade)
+  colaborador     Colaborador @relation(fields: [idBolsista], references: [idBolsista], onDelete: Restrict)
 }
