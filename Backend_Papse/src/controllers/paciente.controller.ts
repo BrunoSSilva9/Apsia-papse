@@ -1,12 +1,31 @@
 import { type Request, type Response } from "express";
 import { PacienteService } from "../services/paciente.service.js";
+import axios from "axios";
 
 export class PacienteController {
   private pacienteService = new PacienteService();
 
   public create = async (req: Request, res: Response) => {
     try {
-      const dadosPaciente = req.body;
+      const { recaptchaToken, ...dadosPaciente } = req.body;
+      if (!recaptchaToken) {
+        return res
+          .status(403)
+          .json({ message: "Falha de segurança: Token do reCAPTCHA ausente." });
+      }
+
+      const googleVerifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`;
+
+      const googleResponse = await axios.post(googleVerifyUrl);
+      const { success, score } = googleResponse.data;
+
+      if (!success || score < 0.5) {
+        console.warn(`Tentativa de bot bloqueada. Score: ${score}`);
+        return res
+          .status(403)
+          .json({ message: "Acesso negado por atividade suspeita (Bot)." });
+      }
+
       const ipRaw = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
       const ip_origem = Array.isArray(ipRaw) ? ipRaw[0] : ipRaw;
 

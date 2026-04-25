@@ -6,6 +6,7 @@ import api from "../services/api";
 import illustration from "../assets/images/formulario_illustration.png";
 import HeaderMenu from "../components/shared/HeaderMenu";
 import { CheckCircle } from "lucide-react";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 const CURSOS_UNIFESSPA = [
   "Administração",
@@ -67,10 +68,19 @@ const Formulario = () => {
     formState: { errors },
   } = useForm<FormData>();
 
+  const { executeRecaptcha } = useGoogleReCaptcha();
+
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
 
     try {
+      if (!executeRecaptcha) {
+        alert("Erro de segurança: reCAPTCHA não carregado.");
+        setIsSubmitting(false);
+        return;
+      }
+      const recaptchaToken = await executeRecaptcha("formulario_paciente");
+
       if (!/^[0-9]+$/.test(data.telefone)) {
         alert("O campo Telefone deve conter apenas números.");
         setIsSubmitting(false);
@@ -103,6 +113,7 @@ const Formulario = () => {
         curso: data.curso,
         relato: data.relato ? data.relato.trim() : "SEM RELATO",
         termo_lgpd: true,
+        recaptchaToken: recaptchaToken,
       };
 
       await api.post("/pacientes", payload, {

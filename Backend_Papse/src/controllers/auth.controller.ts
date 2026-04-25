@@ -1,12 +1,36 @@
 import { type Request, type Response } from "express";
 import { AuthService } from "../services/auth.service.js";
+import axios from "axios";
 
 export class AuthController {
   private authService = new AuthService();
 
   public login = async (req: Request, res: Response) => {
     try {
-      const { email, senha } = req.body;
+      const { email, senha, recaptchaToken } = req.body;
+
+      if (!recaptchaToken) {
+        return res
+          .status(403)
+          .json({ message: "Falha de segurança: Token do reCAPTCHA ausente." });
+      }
+      const googleVerifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`;
+
+      const googleResponse = await axios.post(googleVerifyUrl);
+      const { success, score } = googleResponse.data;
+
+      if (!success || score < 0.5) {
+        console.warn(
+          `Tentativa suspeita de login bloqueada. E-mail: ${email} | Score: ${score}`,
+        );
+        return res
+          .status(403)
+          .json({
+            message:
+              "Acesso negado por medida de segurança (Atividade Suspeita).",
+          });
+      }
+
       const resultado = await this.authService.login({
         email: email,
         senha: senha,

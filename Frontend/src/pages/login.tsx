@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import HeaderMenu from "../components/shared/HeaderMenu";
 import imgLogin from "../assets/images/img-login.svg";
 
@@ -13,10 +15,20 @@ const Login = () => {
   const { register, handleSubmit } = useForm<LoginFormInputs>();
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const onSubmit = async (data: LoginFormInputs) => {
     try {
-      await signIn(data.email, data.senha_pura);
+      if (!executeRecaptcha) {
+        alert("Erro de segurança: reCAPTCHA não carregado.");
+        setIsSubmitting(false);
+        return;
+      }
+      const recaptchaToken = await executeRecaptcha("login_bolsista_admin");
+
+      await signIn(data.email, data.senha_pura, recaptchaToken);
 
       const userStr = localStorage.getItem("@Papse:user");
 
@@ -29,7 +41,9 @@ const Login = () => {
         }
       }
     } catch {
-      alert("Falha no login. Verifique seu email e senha.");
+      alert("Falha no login. Verifique seu email e senha ou tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -129,7 +143,7 @@ const Login = () => {
               type="submit"
               className="mx-auto mt-6 block h-[61px] w-[195px] rounded-full bg-orange-500 text-lg font-semibold text-white transition-colors hover:bg-orange-600 shadow-lg hover:shadow-orange-500/40"
             >
-              ENTRAR
+              {isSubmitting ? "AGUARDE..." : "ENTRAR"}
             </button>
           </form>
         </div>

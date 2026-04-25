@@ -6,7 +6,11 @@ import type { AuthResponse, Colaborador } from "../types";
 interface AuthContextData {
   signed: boolean;
   user: Colaborador | null;
-  signIn: (email: string, senha_pura: string) => Promise<void>;
+  signIn: (
+    email: string,
+    senha_pura: string,
+    recaptchaToken?: string,
+  ) => Promise<void>;
   signOut: () => void;
   loading: boolean;
 }
@@ -33,10 +37,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loadStorageData();
   }, []);
 
-  async function signIn(email: string, senha_pura: string) {
+  async function signIn(
+    email: string,
+    senha_pura: string,
+    recaptchaToken?: string,
+  ) {
     const response = await api.post<AuthResponse>("/login", {
       email: email,
       senha: senha_pura,
+      recaptchaToken,
     });
 
     const {
