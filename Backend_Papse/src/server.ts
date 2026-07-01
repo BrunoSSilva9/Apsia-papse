@@ -16,7 +16,31 @@ console.log("✅ server.ts foi carregado");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+const requiredEnvVars = ["DATABASE_URL", "JWT_SECRET"];
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.error(`ERRO FATAL: Variável de ambiente obrigatória não definida: ${envVar}`);
+    process.exit(1);
+  }
+}
+
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:3000",
+].filter(Boolean) as string[];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Origem não permitida pelo CORS"));
+    },
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 

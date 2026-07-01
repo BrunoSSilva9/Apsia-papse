@@ -50,7 +50,9 @@ export class PacienteService {
 
   async findAll() {
     try {
-      const pacientes = await prisma.paciente.findMany();
+      const pacientes = await prisma.paciente.findMany({
+        where: { ativo: true },
+      });
       return pacientes;
     } catch (error) {
       console.error("Erro ao buscar pacientes:", error);
@@ -61,7 +63,7 @@ export class PacienteService {
   async findOne(id: number) {
     try {
       const paciente = await prisma.paciente.findUniqueOrThrow({
-        where: { idPaciente: id },
+        where: { idPaciente: id, ativo: true },
       });
 
       return paciente;
@@ -97,8 +99,12 @@ export class PacienteService {
 
   async delete(id: number) {
     try {
-      await prisma.paciente.delete({
+      await prisma.paciente.update({
         where: { idPaciente: id },
+        data: {
+          ativo: false,
+          deletedAt: new Date(),
+        },
       });
     } catch (error) {
       console.error(`Erro ao deletar paciente com ID ${id}:`, error);

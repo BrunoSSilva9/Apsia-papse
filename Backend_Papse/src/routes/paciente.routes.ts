@@ -2,6 +2,8 @@ import { Router } from "express";
 import { PacienteController } from "../controllers/paciente.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { checkRole } from "../middlewares/checkRole.middleware.js";
+import { validate } from "../middlewares/validate.middleware.js";
+import { createPacienteSchema, updatePacienteSchema } from "../schemas/paciente.schema.js";
 
 console.log("✅ paciente.routes.ts foi carregado");
 
@@ -12,6 +14,7 @@ router.post(
   "/pacientes", /*
   authMiddleware,
   checkRole(["ADMIN"]),*/
+  validate(createPacienteSchema),
   pacienteController.create
 );
 router.get(
@@ -36,6 +39,7 @@ router.put(
   checkRole(["ADMIN"]),*/
   authMiddleware,
   checkRole(["ADMIN"]),
+  validate(updatePacienteSchema),
   pacienteController.update
 );
 router.delete(

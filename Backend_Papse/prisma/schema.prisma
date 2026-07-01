@@ -27,6 +27,8 @@ model Paciente {
   termo_lgpd Boolean @default(false)
   data_aceite_termo DateTime?
   ip_origem String? @db.VarChar(45)
+  ativo Boolean @default(true)
+  deletedAt DateTime?
 
   // Relações: Um paciente pode estar em várias listas/históricos
   ListaEspera ListaEspera[]
@@ -62,7 +64,7 @@ model ListaEspera {
   
   // Relação com Paciente
   idPaciente    Int
-  paciente      Paciente @relation(fields: [idPaciente], references: [idPaciente], onDelete: Cascade)
+  paciente      Paciente @relation(fields: [idPaciente], references: [idPaciente])
 }
 
 model ListaRegular {
@@ -70,7 +72,7 @@ model ListaRegular {
 
   // Relação com Paciente
   idPaciente     Int
-  paciente       Paciente @relation(fields: [idPaciente], references: [idPaciente], onDelete: Cascade)
+  paciente       Paciente @relation(fields: [idPaciente], references: [idPaciente])
 
   // Relação com Colaborador
   idBolsista     Int
@@ -84,7 +86,7 @@ model Protocolo {
 
   // Relação com Paciente
   idPaciente              Int
-  paciente                Paciente @relation(fields: [idPaciente], references: [idPaciente], onDelete: Cascade)
+  paciente                Paciente @relation(fields: [idPaciente], references: [idPaciente])
   
   // Relação com Colaborador
   idBolsista              Int
@@ -98,7 +100,7 @@ model Regular {
 
   // Relação com Paciente
   idPaciente              Int
-  paciente                Paciente @relation(fields: [idPaciente], references: [idPaciente], onDelete: Cascade)
+  paciente                Paciente @relation(fields: [idPaciente], references: [idPaciente])
   
   // Relação com Colaborador
   idBolsista              Int
@@ -111,7 +113,7 @@ model Historico {
 
   // Relação com Paciente
   idPaciente        Int
-  paciente          Paciente  @relation(fields: [idPaciente], references: [idPaciente], onDelete: Cascade)
+  paciente          Paciente  @relation(fields: [idPaciente], references: [idPaciente])
   
   // Relação com Colaborador (último bolsista)
   id_ultimo_bolsista Int
@@ -125,7 +127,7 @@ model RelatorioEvolutivo {
 
   // Relação com Paciente
   idPaciente      Int
-  paciente        Paciente @relation(fields: [idPaciente], references: [idPaciente], onDelete: Cascade)
+  paciente        Paciente @relation(fields: [idPaciente], references: [idPaciente])
 
   // Relação com Colaborador (quem escreveu)
   idBolsista      Int

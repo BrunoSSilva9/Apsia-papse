@@ -42,7 +42,7 @@ export class PacienteController {
       const novoPaciente = await this.pacienteService.create(payloadFinal);
       res.status(201).json(novoPaciente);
     } catch (error: any) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Erro interno do servidor." });
     }
   };
 
@@ -51,7 +51,7 @@ export class PacienteController {
       const pacientes = await this.pacienteService.findAll();
       res.status(200).json(pacientes);
     } catch (error: any) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Erro interno do servidor." });
     }
   };
 
@@ -71,7 +71,7 @@ export class PacienteController {
       if (error.message === "Paciente não encontrado.") {
         return res.status(404).json({ message: error.message });
       }
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Erro interno do servidor." });
     }
   };
 
@@ -94,7 +94,7 @@ export class PacienteController {
       if (error.message.includes("não encontrado")) {
         return res.status(404).json({ message: error.message });
       }
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Erro interno do servidor." });
     }
   };
 
@@ -114,7 +114,7 @@ export class PacienteController {
       if (error.message === "Paciente não encontrado.") {
         return res.status(404).json({ message: error.message });
       }
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Erro interno do servidor." });
     }
   };
 }
