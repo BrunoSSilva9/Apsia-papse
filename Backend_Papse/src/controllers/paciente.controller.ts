@@ -48,6 +48,25 @@ export class PacienteController {
 
   public findAll = async (req: Request, res: Response) => {
     try {
+      if (req.user && req.user.role === "BOLSISTA") {
+        const { prisma } = await import("../lib/prisma.js");
+        
+        const idsVinculados = new Set<number>();
+        
+        const protocolos = await prisma.protocolo.findMany({ where: { idBolsista: req.user.id }, select: { idPaciente: true } });
+        protocolos.forEach(p => idsVinculados.add(p.idPaciente));
+        
+        const regulares = await prisma.regular.findMany({ where: { idBolsista: req.user.id }, select: { idPaciente: true } });
+        regulares.forEach(r => idsVinculados.add(r.idPaciente));
+        
+        const listaRegulares = await prisma.listaRegular.findMany({ where: { idBolsista: req.user.id }, select: { idPaciente: true } });
+        listaRegulares.forEach(lr => idsVinculados.add(lr.idPaciente));
+        
+        const pacientes = await this.pacienteService.findAll();
+        const pacientesFiltrados = pacientes.filter(p => idsVinculados.has(p.idPaciente));
+        return res.status(200).json(pacientesFiltrados);
+      }
+
       const pacientes = await this.pacienteService.findAll();
       res.status(200).json(pacientes);
     } catch (error: any) {
@@ -65,7 +84,24 @@ export class PacienteController {
           .json({ message: "O ID do paciente é obrigatório." });
       }
 
-      const paciente = await this.pacienteService.findOne(parseInt(id, 10));
+      if (req.user && req.user.role === "BOLSISTA") {
+        const { verificarVinculoService } = await import("../services/vinculo.service.js");
+        const temVinculo = await verificarVinculoService(parseInt(id, 10), req.user.id);
+        if (!temVinculo) {
+          return res.status(403).json({ message: "Acesso negado: Paciente não vinculado a este bolsista." });
+        }
+      }
+
+      const ipValue = req.ip || req.socket.remoteAddress;
+      const reqUser = req.user
+        ? {
+            id: req.user.id,
+            role: req.user.role as string,
+            ...(ipValue ? { ip: ipValue } : {}),
+          }
+        : undefined;
+
+      const paciente = await this.pacienteService.findOne(parseInt(id, 10), reqUser);
       res.status(200).json(paciente);
     } catch (error: any) {
       if (error.message === "Paciente não encontrado.") {
@@ -83,6 +119,14 @@ export class PacienteController {
         return res
           .status(400)
           .json({ message: "O ID do paciente é obrigatório." });
+      }
+
+      if (req.user && req.user.role === "BOLSISTA") {
+        const { verificarVinculoService } = await import("../services/vinculo.service.js");
+        const temVinculo = await verificarVinculoService(parseInt(id, 10), req.user.id);
+        if (!temVinculo) {
+          return res.status(403).json({ message: "Acesso negado: Paciente não vinculado a este bolsista." });
+        }
       }
 
       const pacienteAtualizado = await this.pacienteService.update(
@@ -108,7 +152,16 @@ export class PacienteController {
           .json({ message: "O ID do paciente é obrigatório." });
       }
 
-      await this.pacienteService.delete(parseInt(id, 10));
+      const ipValue = req.ip || req.socket.remoteAddress;
+      const reqUser = req.user
+        ? {
+            id: req.user.id,
+            role: req.user.role as string,
+            ...(ipValue ? { ip: ipValue } : {}),
+          }
+        : undefined;
+
+      await this.pacienteService.delete(parseInt(id, 10), reqUser);
       res.status(204).send();
     } catch (error: any) {
       if (error.message === "Paciente não encontrado.") {

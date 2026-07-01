@@ -4,6 +4,7 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { checkRole } from "../middlewares/checkRole.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import { createPacienteSchema, updatePacienteSchema } from "../schemas/paciente.schema.js";
+import { publicLimiter } from "../middlewares/rateLimit.middleware.js";
 
 console.log("✅ paciente.routes.ts foi carregado");
 
@@ -14,6 +15,7 @@ router.post(
   "/pacientes", /*
   authMiddleware,
   checkRole(["ADMIN"]),*/
+  publicLimiter,
   validate(createPacienteSchema),
   pacienteController.create
 );
@@ -22,7 +24,7 @@ router.get(
   authMiddleware,
   checkRole(["ADMIN"]),*/
   authMiddleware,
-  checkRole(["ADMIN"]),
+  checkRole(["ADMIN", "BOLSISTA"]),
   pacienteController.findAll
 );
 router.get(
@@ -30,7 +32,7 @@ router.get(
   authMiddleware,
   checkRole(["ADMIN"]),*/
   authMiddleware,
-  checkRole(["ADMIN"]),
+  checkRole(["ADMIN", "BOLSISTA"]),
   pacienteController.findOne
 );
 router.put(
@@ -38,7 +40,7 @@ router.put(
   authMiddleware,
   checkRole(["ADMIN"]),*/
   authMiddleware,
-  checkRole(["ADMIN"]),
+  checkRole(["ADMIN", "BOLSISTA"]),
   validate(updatePacienteSchema),
   pacienteController.update
 );
@@ -47,7 +49,7 @@ router.delete(
   authMiddleware,
   checkRole(["ADMIN"]),*/
   authMiddleware,
-  checkRole(["ADMIN"]),
+  checkRole(["ADMIN"]), // Delete continua só para ADMIN
   pacienteController.delete
 );
 

@@ -2,8 +2,8 @@ import { type Request, type Response } from "express";
 import {
   createRelatorioService,
   getRelatoriosByPacienteService,
-  verificarVinculoService,
 } from "../services/relatorio.service.js";
+import { verificarVinculoService } from "../services/vinculo.service.js";
 
 export const createRelatorio = async (req: Request, res: Response) => {
   try {

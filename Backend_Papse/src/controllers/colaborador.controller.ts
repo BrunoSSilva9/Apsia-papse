@@ -92,7 +92,16 @@ export class ColaboradorController {
     }
 
     try {
-      await this.colaboradorService.delete(parseInt(id, 10));
+      const ipValue = req.ip || req.socket.remoteAddress;
+      const reqUser = req.user
+        ? {
+            id: req.user.id,
+            role: req.user.role as any,
+            ...(ipValue ? { ip: ipValue } : {}),
+          }
+        : undefined;
+
+      await this.colaboradorService.delete(parseInt(id, 10), reqUser);
       res.status(204).send();
     } catch (error: any) {
       if (error.message === "Colaborador não encontrado.") {

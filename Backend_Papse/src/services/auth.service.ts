@@ -10,6 +10,21 @@ export interface LoginDto {
 }
 
 export class AuthService {
+  private async logAuthEvent(idBolsista: number, acao: string) {
+    try {
+      const { AuditService } = await import("./audit.service.js");
+      const audit = new AuditService();
+      await audit.log({
+        idBolsista,
+        acao,
+        entidade: "Colaborador",
+        entidadeId: idBolsista,
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
+
   async login(data: LoginDto) {
     const colaborador = await prisma.colaborador.findUnique({
       where: { email: data.email },
@@ -26,6 +41,7 @@ export class AuthService {
     const senhaValida = await bcrypt.compare(data.senha, colaborador.senha);
 
     if (!senhaValida) {
+      await this.logAuthEvent(colaborador.idBolsista, "FALHA_LOGIN");
       throw new Error("E-mail ou senha inválidos.");
     }
 
@@ -45,9 +61,11 @@ export class AuthService {
       },
     );
 
-    const { senha, ...colaboradorSemSenha } = colaborador;
+    await this.logAuthEvent(colaborador.idBolsista, "LOGIN_SUCESSO");
+
+    const { senha, resetToken, resetTokenExpires, ...colaboradorLimpo } = colaborador;
     return {
-      usuario: colaboradorSemSenha,
+      usuario: colaboradorLimpo,
       token: token,
     };
   }

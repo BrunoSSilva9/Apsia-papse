@@ -47,7 +47,17 @@ export class ColaboradorService {
 
   async findAll() {
     try {
-      const colaboradores = await prisma.colaborador.findMany();
+      const colaboradores = await prisma.colaborador.findMany({
+        select: {
+          idBolsista: true,
+          nome: true,
+          matricula: true,
+          email: true,
+          data_admissao: true,
+          data_saida: true,
+          role: true,
+        },
+      });
       return colaboradores;
     } catch (error) {
       console.error("Erro ao buscar colaboradores:", error);
@@ -59,6 +69,15 @@ export class ColaboradorService {
     try {
       const colaborador = await prisma.colaborador.findUniqueOrThrow({
         where: { idBolsista: id },
+        select: {
+          idBolsista: true,
+          nome: true,
+          matricula: true,
+          email: true,
+          data_admissao: true,
+          data_saida: true,
+          role: true,
+        },
       });
       return colaborador;
     } catch (error) {
@@ -98,7 +117,7 @@ export class ColaboradorService {
     }
   }
 
-  async delete(id: number) {
+  async delete(id: number, reqUser?: { id: number; role: Role; ip?: string }) {
     try {
       const emProtocolo = await prisma.protocolo.count({
         where: { idBolsista: id },
@@ -114,7 +133,6 @@ export class ColaboradorService {
         throw new Error("VINCULO_ATIVO");
       }
 
-
       await prisma.colaborador.update({
         where: { idBolsista: id },
         data: {
@@ -124,6 +142,19 @@ export class ColaboradorService {
           resetTokenExpires: null,
         },
       });
+
+      if (reqUser) {
+        const { AuditService } = await import("./audit.service.js");
+        const audit = new AuditService();
+        await audit.log({
+          idBolsista: reqUser.id,
+          role: reqUser.role,
+          acao: "INATIVAR_COLABORADOR",
+          entidade: "Colaborador",
+          entidadeId: id,
+          ...(reqUser.ip ? { ip_origem: reqUser.ip } : {}),
+        });
+      }
     } catch (error: any) {
       if (error.message === "VINCULO_ATIVO") {
         throw new Error(

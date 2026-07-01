@@ -133,3 +133,16 @@ model RelatorioEvolutivo {
   idBolsista      Int
   colaborador     Colaborador @relation(fields: [idBolsista], references: [idBolsista], onDelete: Restrict)
 }
+
+model LogAuditoria {
+  idLog        Int      @id @default(autoincrement())
+  idBolsista   Int?     // Referência opcional caso quem fez a ação foi o paciente ou o sistema
+  role         Role?    // Apenas para registrar com qual role a ação foi feita (se aplicável)
+  acao         String   @db.VarChar(100) // Ex: "CRIOU_RELATORIO", "INATIVOU_PACIENTE"
+  entidade     String   @db.VarChar(100) // Ex: "RelatorioEvolutivo", "Paciente"
+  entidadeId   Int?     // ID do registro que foi afetado
+  pacienteId   Int?     // ID do paciente envolvido, para facilitar busca por prontuário
+  data_hora    DateTime @default(now())
+  ip_origem    String?  @db.VarChar(45)
+  user_agent   String?  @db.VarChar(255)
+}

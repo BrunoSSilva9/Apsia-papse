@@ -52,6 +52,13 @@ export class PacienteService {
     try {
       const pacientes = await prisma.paciente.findMany({
         where: { ativo: true },
+        select: {
+          idPaciente: true,
+          nome: true,
+          matricula: true,
+          data_inscricao: true,
+          ativo: true,
+        }
       });
       return pacientes;
     } catch (error) {
@@ -60,16 +67,29 @@ export class PacienteService {
     }
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, reqUser?: { id: number; role: string; ip?: string }) {
     try {
       const paciente = await prisma.paciente.findUniqueOrThrow({
         where: { idPaciente: id, ativo: true },
       });
 
+      if (reqUser) {
+        const { AuditService } = await import("./audit.service.js");
+        const audit = new AuditService();
+        await audit.log({
+          idBolsista: reqUser.id,
+          role: reqUser.role as any,
+          acao: "VISUALIZAR_PACIENTE",
+          entidade: "Paciente",
+          entidadeId: id,
+          pacienteId: id,
+          ...(reqUser.ip ? { ip_origem: reqUser.ip } : {}),
+        });
+      }
+
       return paciente;
     } catch (error) {
       console.error(`Erro ao buscar paciente com ID ${id}:`, error);
-
       throw new Error("Paciente não encontrado.");
     }
   }
@@ -97,7 +117,7 @@ export class PacienteService {
     }
   }
 
-  async delete(id: number) {
+  async delete(id: number, reqUser?: { id: number; role: string; ip?: string }) {
     try {
       await prisma.paciente.update({
         where: { idPaciente: id },
@@ -106,6 +126,20 @@ export class PacienteService {
           deletedAt: new Date(),
         },
       });
+
+      if (reqUser) {
+        const { AuditService } = await import("./audit.service.js");
+        const audit = new AuditService();
+        await audit.log({
+          idBolsista: reqUser.id,
+          role: reqUser.role as any,
+          acao: "INATIVAR_PACIENTE",
+          entidade: "Paciente",
+          entidadeId: id,
+          pacienteId: id,
+          ...(reqUser.ip ? { ip_origem: reqUser.ip } : {}),
+        });
+      }
     } catch (error) {
       console.error(`Erro ao deletar paciente com ID ${id}:`, error);
       throw new Error("Paciente não encontrado.");
