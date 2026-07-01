@@ -15,9 +15,9 @@ export interface UpdateRegularDto {
 }
 
 export class RegularService {
-  async create(data: CreateRegularDto) {
+  async create(data: CreateRegularDto, reqUser?: { id: number; role: string; ip?: string }) {
     try {
-      return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const resultado = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         const pacienteEmEspera = await tx.listaEspera.findFirst({
           where: { idPaciente: data.idPaciente },
         });
@@ -61,6 +61,22 @@ export class RegularService {
 
         return novoRegistro;
       });
+
+      if (reqUser) {
+        const { AuditService } = await import("./audit.service.js");
+        const audit = new AuditService();
+        await audit.log({
+          idBolsista: reqUser.id,
+          role: reqUser.role as any,
+          acao: "CRIAR_REGULAR",
+          entidade: "Regular",
+          entidadeId: resultado.idRegular,
+          pacienteId: data.idPaciente,
+          ...(reqUser.ip ? { ip_origem: reqUser.ip } : {}),
+        });
+      }
+
+      return resultado;
     } catch (error: any) {
       if (error.code === "P2025") {
         console.error(
@@ -157,7 +173,7 @@ export class RegularService {
     }
   }
 
-  async delete(id: number) {
+  async delete(id: number, reqUser?: { id: number; role: string; ip?: string }) {
     try {
       const regularParaArquivar = await prisma.regular.findUniqueOrThrow({
         where: { idRegular: id },
@@ -176,6 +192,20 @@ export class RegularService {
           },
         });
       });
+
+      if (reqUser) {
+        const { AuditService } = await import("./audit.service.js");
+        const audit = new AuditService();
+        await audit.log({
+          idBolsista: reqUser.id,
+          role: reqUser.role as any,
+          acao: "ARQUIVAR_REGULAR",
+          entidade: "Regular",
+          entidadeId: id,
+          pacienteId: regularParaArquivar.idPaciente,
+          ...(reqUser.ip ? { ip_origem: reqUser.ip } : {}),
+        });
+      }
     } catch (error: any) {
       if (error.code === "P2025" || error.message.includes("não encontrado")) {
         throw new Error("Registro de atendimento regular não encontrado.");

@@ -119,12 +119,47 @@ export class PacienteService {
 
   async delete(id: number, reqUser?: { id: number; role: string; ip?: string }) {
     try {
-      await prisma.paciente.update({
-        where: { idPaciente: id },
-        data: {
-          ativo: false,
-          deletedAt: new Date(),
-        },
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        // 1. Inativa o paciente (soft delete)
+        await tx.paciente.update({
+          where: { idPaciente: id },
+          data: {
+            ativo: false,
+            deletedAt: new Date(),
+          },
+        });
+
+        // 2. Remove da lista de espera (não tem vínculo com bolsista)
+        await tx.listaEspera.deleteMany({
+          where: { idPaciente: id },
+        });
+
+        // 3. Remove da lista regular e gera histórico
+        const emListaRegular = await tx.listaRegular.findMany({ where: { idPaciente: id } });
+        for (const lr of emListaRegular) {
+          await tx.listaRegular.delete({ where: { idListaRegular: lr.idListaRegular } });
+          await tx.historico.create({
+            data: { idPaciente: id, id_ultimo_bolsista: lr.idBolsista, data_desligamento: new Date() }
+          });
+        }
+
+        // 4. Remove de protocolo e gera histórico
+        const emProtocolo = await tx.protocolo.findMany({ where: { idPaciente: id } });
+        for (const p of emProtocolo) {
+          await tx.protocolo.delete({ where: { idProtocolo: p.idProtocolo } });
+          await tx.historico.create({
+            data: { idPaciente: id, id_ultimo_bolsista: p.idBolsista, data_desligamento: new Date() }
+          });
+        }
+
+        // 5. Remove de regular e gera histórico
+        const emRegular = await tx.regular.findMany({ where: { idPaciente: id } });
+        for (const r of emRegular) {
+          await tx.regular.delete({ where: { idRegular: r.idRegular } });
+          await tx.historico.create({
+            data: { idPaciente: id, id_ultimo_bolsista: r.idBolsista, data_desligamento: new Date() }
+          });
+        }
       });
 
       if (reqUser) {
