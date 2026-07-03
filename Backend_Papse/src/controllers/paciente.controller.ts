@@ -1,29 +1,28 @@
-import { type Request, type Response } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import { PacienteService } from "../services/paciente.service.js";
 import axios from "axios";
+import { AppError } from "../errors/AppError.js";
 
 export class PacienteController {
   private pacienteService = new PacienteService();
 
-  public create = async (req: Request, res: Response) => {
+  public create = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { recaptchaToken, ...dadosPaciente } = req.body;
-      if (!recaptchaToken) {
-        return res
-          .status(403)
-          .json({ message: "Falha de segurança: Token do reCAPTCHA ausente." });
-      }
+      if (process.env.NODE_ENV !== "development" && process.env.RECAPTCHA_SECRET_KEY !== "chave_local_de_teste") {
+        if (!recaptchaToken) {
+          throw new AppError("Falha de segurança: Token do reCAPTCHA ausente.", 403);
+        }
 
-      const googleVerifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`;
+        const googleVerifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`;
 
-      const googleResponse = await axios.post(googleVerifyUrl);
-      const { success, score } = googleResponse.data;
+        const googleResponse = await axios.post(googleVerifyUrl);
+        const { success, score } = googleResponse.data;
 
-      if (!success || score < 0.5) {
-        console.warn(`Tentativa de bot bloqueada. Score: ${score}`);
-        return res
-          .status(403)
-          .json({ message: "Acesso negado por atividade suspeita (Bot)." });
+        if (!success || score < 0.5) {
+          console.warn(`Tentativa de bot bloqueada. Score: ${score}`);
+          throw new AppError("Acesso negado por atividade suspeita (Bot).", 403);
+        }
       }
 
       const ipRaw = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
@@ -40,13 +39,17 @@ export class PacienteController {
       };
 
       const novoPaciente = await this.pacienteService.create(payloadFinal);
-      res.status(201).json(novoPaciente);
+      res.status(201).json({
+        success: true,
+        data: novoPaciente,
+        message: "Paciente criado com sucesso."
+      });
     } catch (error: any) {
-      res.status(500).json({ message: "Erro interno do servidor." });
+      next(error);
     }
   };
 
-  public findAll = async (req: Request, res: Response) => {
+  public findAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (req.user && req.user.role === "BOLSISTA") {
         const { prisma } = await import("../lib/prisma.js");
@@ -70,25 +73,19 @@ export class PacienteController {
       const pacientes = await this.pacienteService.findAll();
       res.status(200).json(pacientes);
     } catch (error: any) {
-      res.status(500).json({ message: "Erro interno do servidor." });
+      next(error);
     }
   };
 
-  public findOne = async (req: Request, res: Response) => {
+  public findOne = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
 
-      if (!id) {
-        return res
-          .status(400)
-          .json({ message: "O ID do paciente é obrigatório." });
-      }
-
       if (req.user && req.user.role === "BOLSISTA") {
         const { verificarVinculoService } = await import("../services/vinculo.service.js");
-        const temVinculo = await verificarVinculoService(parseInt(id, 10), req.user.id);
+        const temVinculo = await verificarVinculoService(parseInt(id as string, 10), req.user.id);
         if (!temVinculo) {
-          return res.status(403).json({ message: "Acesso negado: Paciente não vinculado a este bolsista." });
+          throw new AppError("Acesso negado: Paciente não vinculado a este bolsista.", 403);
         }
       }
 
@@ -101,56 +98,48 @@ export class PacienteController {
           }
         : undefined;
 
-      const paciente = await this.pacienteService.findOne(parseInt(id, 10), reqUser);
+      const paciente = await this.pacienteService.findOne(parseInt(id as string, 10), reqUser);
       res.status(200).json(paciente);
     } catch (error: any) {
       if (error.message === "Paciente não encontrado.") {
-        return res.status(404).json({ message: error.message });
+        return next(new AppError(error.message, 404));
       }
-      res.status(500).json({ message: "Erro interno do servidor." });
+      next(error);
     }
   };
 
-  public update = async (req: Request, res: Response) => {
+  public update = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
 
-      if (!id) {
-        return res
-          .status(400)
-          .json({ message: "O ID do paciente é obrigatório." });
-      }
-
       if (req.user && req.user.role === "BOLSISTA") {
         const { verificarVinculoService } = await import("../services/vinculo.service.js");
-        const temVinculo = await verificarVinculoService(parseInt(id, 10), req.user.id);
+        const temVinculo = await verificarVinculoService(parseInt(id as string, 10), req.user.id);
         if (!temVinculo) {
-          return res.status(403).json({ message: "Acesso negado: Paciente não vinculado a este bolsista." });
+          throw new AppError("Acesso negado: Paciente não vinculado a este bolsista.", 403);
         }
       }
 
       const pacienteAtualizado = await this.pacienteService.update(
-        parseInt(id, 10),
+        parseInt(id as string, 10),
         req.body,
       );
-      res.status(200).json(pacienteAtualizado);
+      res.status(200).json({
+        success: true,
+        data: pacienteAtualizado,
+        message: "Paciente atualizado com sucesso."
+      });
     } catch (error: any) {
       if (error.message.includes("não encontrado")) {
-        return res.status(404).json({ message: error.message });
+        return next(new AppError(error.message, 404));
       }
-      res.status(500).json({ message: "Erro interno do servidor." });
+      next(error);
     }
   };
 
-  public delete = async (req: Request, res: Response) => {
+  public delete = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-
-      if (!id) {
-        return res
-          .status(400)
-          .json({ message: "O ID do paciente é obrigatório." });
-      }
 
       const ipValue = req.ip || req.socket.remoteAddress;
       const reqUser = req.user
@@ -161,13 +150,13 @@ export class PacienteController {
           }
         : undefined;
 
-      await this.pacienteService.delete(parseInt(id, 10), reqUser);
+      await this.pacienteService.delete(parseInt(id as string, 10), reqUser);
       res.status(204).send();
     } catch (error: any) {
       if (error.message === "Paciente não encontrado.") {
-        return res.status(404).json({ message: error.message });
+        return next(new AppError(error.message, 404));
       }
-      res.status(500).json({ message: "Erro interno do servidor." });
+      next(error);
     }
   };
 }

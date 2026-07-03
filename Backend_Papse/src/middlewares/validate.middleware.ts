@@ -11,9 +11,8 @@ export const validate = (schema: ZodSchema) => {
       }) as any;
       // Sobrescrevemos o req.body com os dados validados/sanitizados
       req.body = validatedData.body;
-      req.query = validatedData.query as any;
-      req.params = validatedData.params as any;
-      next();
+      if (validatedData.query) req.query = validatedData.query;
+      if (validatedData.params) req.params = validatedData.params;
     } catch (error) {
       if (error instanceof ZodError) {
         return res.status(400).json({
@@ -23,5 +22,6 @@ export const validate = (schema: ZodSchema) => {
       }
       return res.status(500).json({ message: "Erro interno do servidor." });
     }
+    next();
   };
 };

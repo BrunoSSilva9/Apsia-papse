@@ -30,6 +30,10 @@ const TabNavigationAdmin: React.FC = () => {
           >
             Colaboradores
           </NavLink>
+
+          <NavLink to="/admin/auditoria" className={linkClass}>
+            Auditoria
+          </NavLink>
         </nav>
       </div>
     </div>

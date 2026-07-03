@@ -4,6 +4,7 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { checkRole } from "../middlewares/checkRole.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import { createPacienteSchema, updatePacienteSchema } from "../schemas/paciente.schema.js";
+import { paramIdSchema } from "../schemas/paramId.schema.js";
 import { publicLimiter } from "../middlewares/rateLimit.middleware.js";
 
 console.log("✅ paciente.routes.ts foi carregado");
@@ -33,6 +34,7 @@ router.get(
   checkRole(["ADMIN"]),*/
   authMiddleware,
   checkRole(["ADMIN", "BOLSISTA"]),
+  validate(paramIdSchema),
   pacienteController.findOne
 );
 router.put(
@@ -50,6 +52,7 @@ router.delete(
   checkRole(["ADMIN"]),*/
   authMiddleware,
   checkRole(["ADMIN"]), // Delete continua só para ADMIN
+  validate(paramIdSchema),
   pacienteController.delete
 );
 

@@ -9,6 +9,7 @@ export interface CreateProtocoloDto {
 }
 
 export interface UpdateProtocoloDto {
+  idBolsista?: number;
   data_inicio_atendimento?: string;
   qtde_sessoes?: number;
 }
@@ -25,6 +26,14 @@ export class ProtocoloService {
           await tx.colaborador.findUniqueOrThrow({
             where: { idBolsista: data.idBolsista },
           });
+
+          // Anti-duplicata: verificar se já tem protocolo ativo
+          const jaExiste = await tx.protocolo.findFirst({
+            where: { idPaciente: data.idPaciente },
+          });
+          if (jaExiste) {
+            throw new Error("Paciente já tem um protocolo ativo.");
+          }
 
           // Remover da lista de espera se estiver lá
           await tx.listaEspera.deleteMany({

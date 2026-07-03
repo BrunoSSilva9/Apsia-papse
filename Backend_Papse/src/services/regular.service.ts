@@ -26,13 +26,25 @@ export class RegularService {
           where: { idPaciente: data.idPaciente },
         });
 
-        if (!pacienteEmEspera && !pacienteRegular) {
+        const pacienteProtocolo = await tx.protocolo.findFirst({
+          where: { idPaciente: data.idPaciente },
+        });
+
+        if (!pacienteEmEspera && !pacienteRegular && !pacienteProtocolo) {
           throw new Error("Paciente não encontrado em nenhuma lista.");
         }
 
         await tx.colaborador.findUniqueOrThrow({
           where: { idBolsista: data.idBolsista },
         });
+
+        // Anti-duplicata: verificar se já tem regular ativo
+        const jaExisteRegular = await tx.regular.findFirst({
+          where: { idPaciente: data.idPaciente },
+        });
+        if (jaExisteRegular) {
+          throw new Error("Paciente já tem atendimento regular ativo.");
+        }
 
         if (pacienteEmEspera) {
           await tx.listaEspera.deleteMany({
@@ -42,6 +54,12 @@ export class RegularService {
 
         if (pacienteRegular) {
           await tx.listaRegular.deleteMany({
+            where: { idPaciente: data.idPaciente },
+          });
+        }
+
+        if (pacienteProtocolo) {
+          await tx.protocolo.deleteMany({
             where: { idPaciente: data.idPaciente },
           });
         }

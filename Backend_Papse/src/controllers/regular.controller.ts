@@ -1,73 +1,68 @@
-import { type Request, type Response } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import { RegularService } from "../services/regular.service.js";
+import { AppError } from "../errors/AppError.js";
 
 export class RegularController {
   private regularService = new RegularService();
 
-  async create(req: Request, res: Response) {
-    const data = req.body;
-
+  public create = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const novoRegistro = await this.regularService.create(data);
-      return res.status(201).json(novoRegistro);
-    } catch (error) {
-      console.error("Erro ao criar registro regular:", error);
-      return res.status(500).json({ error: "Erro ao criar registro regular." });
+      const ipRaw = req.ip || req.socket?.remoteAddress;
+      const reqUser = req.user
+        ? { id: req.user.id, role: req.user.role as string, ...(ipRaw ? { ip: ipRaw } : {}) }
+        : undefined;
+      const novoRegistro = await this.regularService.create(req.body, reqUser);
+      res.status(201).json({ success: true, data: novoRegistro, message: "Atendimento regular criado com sucesso." });
+    } catch (error: any) {
+      if (error.message?.includes("não encontrado")) return next(new AppError(error.message, 404));
+      if (error.message?.includes("já está") || error.message?.includes("já tem")) return next(new AppError(error.message, 409));
+      next(error);
     }
-  }
+  };
 
-  async findAll(req: Request, res: Response) {
+  public findAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const registros = await this.regularService.findAll();
-      return res.status(200).json(registros);
-    } catch (error) {
-      console.error("Erro ao buscar registros regulares:", error);
-      return res
-        .status(500)
-        .json({ error: "Erro ao buscar registros regulares." });
+      res.status(200).json({ success: true, data: registros, message: "Registros regulares recuperados com sucesso." });
+    } catch (error: any) {
+      next(error);
     }
-  }
+  };
 
-  async findOne(req: Request, res: Response) {
+  public findOne = async (req: Request, res: Response, next: NextFunction) => {
     const id = Number(req.params.id);
-
     try {
       const registro = await this.regularService.findOne(id);
-      return res.status(200).json(registro);
-    } catch (error) {
-      console.error("Erro ao buscar registro regular:", error);
-      return res
-        .status(500)
-        .json({ error: "Erro ao buscar registro regular." });
+      res.status(200).json({ success: true, data: registro, message: "Registro recuperado com sucesso." });
+    } catch (error: any) {
+      if (error.message?.includes("não encontrad")) return next(new AppError(error.message, 404));
+      next(error);
     }
-  }
+  };
 
-  async update(req: Request, res: Response) {
+  public update = async (req: Request, res: Response, next: NextFunction) => {
     const id = Number(req.params.id);
-    const data = req.body;
-
     try {
-      const registroAtualizado = await this.regularService.update(id, data);
-      return res.status(200).json(registroAtualizado);
-    } catch (error) {
-      console.error("Erro ao atualizar registro regular:", error);
-      return res
-        .status(500)
-        .json({ error: "Erro ao atualizar registro regular." });
+      const registroAtualizado = await this.regularService.update(id, req.body);
+      res.status(200).json({ success: true, data: registroAtualizado, message: "Registro regular atualizado com sucesso." });
+    } catch (error: any) {
+      if (error.message?.includes("não encontrad")) return next(new AppError(error.message, 404));
+      next(error);
     }
-  }
+  };
 
-  async delete(req: Request, res: Response) {
+  public delete = async (req: Request, res: Response, next: NextFunction) => {
     const id = Number(req.params.id);
-
     try {
-      await this.regularService.delete(id);
-      return res.status(204).send();
-    } catch (error) {
-      console.error("Erro ao deletar registro regular:", error);
-      return res
-        .status(500)
-        .json({ error: "Erro ao deletar registro regular." });
+      const ipRaw = req.ip || req.socket?.remoteAddress;
+      const reqUser = req.user
+        ? { id: req.user.id, role: req.user.role as string, ...(ipRaw ? { ip: ipRaw } : {}) }
+        : undefined;
+      await this.regularService.delete(id, reqUser);
+      res.status(204).send();
+    } catch (error: any) {
+      if (error.message?.includes("não encontrad")) return next(new AppError(error.message, 404));
+      next(error);
     }
-  }
+  };
 }

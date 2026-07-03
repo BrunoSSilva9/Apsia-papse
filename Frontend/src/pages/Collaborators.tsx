@@ -5,6 +5,7 @@ import {
   createColaborador,
   deleteColaborador,
 } from "../services/api";
+import { unwrapApiResponse } from "../utils/apiResponse";
 import {
   User,
   Shield,
@@ -67,7 +68,8 @@ const Collaborators = () => {
     try {
       setLoading(true);
       const response = await getBolsistas();
-      setCollaborators(response.data);
+      const unwrapped = unwrapApiResponse<any[]>(response.data);
+      setCollaborators(unwrapped);
     } catch (error) {
       console.error("Erro ao carregar colaboradores:", error);
     } finally {

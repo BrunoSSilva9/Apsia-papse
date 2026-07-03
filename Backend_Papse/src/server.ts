@@ -10,6 +10,7 @@ import regularRoutes from "./routes/regular.routes.js";
 import historicoRoutes from "./routes/historico.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import relatorioRoutes from "./routes/relatorio.routes.js";
+import auditRoutes from "./routes/audit.routes.js";
 
 console.log("✅ server.ts foi carregado");
 
@@ -44,6 +45,8 @@ app.use(
 
 app.use(express.json());
 
+import { errorHandler } from "./middlewares/errorHandler.middleware.js";
+
 app.use("/api", authRoutes);
 
 app.use("/api", pacienteRoutes);
@@ -54,10 +57,14 @@ app.use("/api", listaRegularRoutes);
 app.use("/api", regularRoutes);
 app.use("/api", historicoRoutes);
 app.use("/api/relatorios", relatorioRoutes);
+app.use("/api/auditoria", auditRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "API está funcionando!" });
 });
+
+// Middleware Global de Erro (deve vir depois de todas as rotas)
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);

@@ -17,11 +17,9 @@ const EsqueciSenha = () => {
     setMensagem({ texto: "", tipo: "" });
 
     try {
-      const response = await api.post("/esqueci-senha", { email });
+      await api.post("/esqueci-senha", { email });
       setMensagem({
-        texto:
-          response.data.message ||
-          "Se o e-mail estiver cadastrado, um link de recuperação será enviado.",
+        texto: "Se o e-mail estiver cadastrado, um link de recuperação será enviado.",
         tipo: "sucesso",
       });
       setEmail("");

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
+import { unwrapApiResponse } from "../utils/apiResponse";
 import { Search, FileText, User, Calendar, ChevronRight } from "lucide-react";
 import { fetchInscricoes, getRelatoriosPorPaciente } from "../services/api";
 
@@ -26,7 +27,8 @@ const Report = () => {
       setLoadingList(true);
       try {
         const response = await fetchInscricoes();
-        const data = response.data.map((item: any) => item.paciente || item);
+        const unwrapped = unwrapApiResponse<any[]>(response.data);
+        const data = unwrapped.map((item: any) => item.paciente || item);
 
         const uniquePatients = Array.from(
           new Map(data.map((p: any) => [p.idPaciente, p])).values(),
@@ -46,7 +48,8 @@ const Report = () => {
     setLoadingReports(true);
     try {
       const response = await getRelatoriosPorPaciente(patient.idPaciente);
-      setRelatorios(response.data);
+      const unwrapped = unwrapApiResponse<any[]>(response.data);
+      setRelatorios(unwrapped);
     } catch (error) {
       console.error("Erro ao carregar relatórios", error);
       setRelatorios([]);

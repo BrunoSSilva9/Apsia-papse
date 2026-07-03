@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect /*,useContext*/ } from "react";
 import type { ReactNode } from "react";
 import api from "../services/api";
+import { unwrapApiResponse } from "../utils/apiResponse";
 import type { AuthResponse, Colaborador } from "../types";
 
 interface AuthContextData {
@@ -48,12 +49,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       recaptchaToken,
     });
 
+    const dataUnwrapped = unwrapApiResponse<AuthResponse>(response.data);
+
     const {
       token,
       usuario,
       colaborador: colaboradorResp,
       user,
-    } = response.data as AuthResponse;
+    } = dataUnwrapped;
     const usuarioFinal = usuario || colaboradorResp || user;
 
     if (!token || !usuarioFinal) {

@@ -7,6 +7,7 @@ import {
   createRelatorio,
   getRelatoriosPorPaciente,
 } from "../services/api";
+import { unwrapApiResponse } from "../utils/apiResponse";
 import { useAuth } from "../hooks/useAuth";
 import HeaderMenu from "../components/shared/HeaderMenu";
 import PatientCard from "../components/shared/PatientCard";
@@ -54,36 +55,42 @@ const Bolsista = () => {
         };
 
         if (protocolosResult.status === "fulfilled") {
-          const myProtocolos = protocolosResult.value.data
+          const rawProtocolos = unwrapApiResponse<any[]>(protocolosResult.value.data);
+          const allProtocolos = Array.isArray(rawProtocolos) ? rawProtocolos : [];
+          const myProtocolos = allProtocolos
             .filter(filterByBolsista)
             .map((item: any) => ({
               ...item.paciente,
               relationId: item.idProtocolo,
-              motivo: item.paciente.relato,
+              motivo: item.paciente?.relato,
               dataInicio: item.data_inicio_atendimento,
             }));
           setProtocolos(myProtocolos);
         }
 
         if (regularesResult.status === "fulfilled") {
-          const myRegulares = regularesResult.value.data
+          const rawRegulares = unwrapApiResponse<any[]>(regularesResult.value.data);
+          const allRegulares = Array.isArray(rawRegulares) ? rawRegulares : [];
+          const myRegulares = allRegulares
             .filter(filterByBolsista)
             .map((item: any) => ({
               ...item.paciente,
               relationId: item.idRegular,
-              motivo: item.paciente.relato,
+              motivo: item.paciente?.relato,
               dataInicio: item.data_inicio_atendimento,
             }));
           setRegulares(myRegulares);
         }
 
         if (esperaRegularesResult.status === "fulfilled") {
-          const myEsperaRegulares = esperaRegularesResult.value.data
+          const rawEspera = unwrapApiResponse<any[]>(esperaRegularesResult.value.data);
+          const allEspera = Array.isArray(rawEspera) ? rawEspera : [];
+          const myEsperaRegulares = allEspera
             .filter(filterByBolsista)
             .map((item: any) => ({
               ...item.paciente,
               relationId: item.idListaRegular,
-              motivo: item.paciente.relato,
+              motivo: item.paciente?.relato,
             }));
           setEsperaRegulares(myEsperaRegulares);
         }
@@ -101,7 +108,8 @@ const Bolsista = () => {
     setLoadingPastReports(true);
     try {
       const response = await getRelatoriosPorPaciente(patientId);
-      const reports = response.data || [];
+      const unwrapped = unwrapApiResponse<any[]>(response.data);
+      const reports = unwrapped || [];
 
       reports.sort(
         (a: any, b: any) =>

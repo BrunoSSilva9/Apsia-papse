@@ -4,5 +4,6 @@ export const loginSchema = z.object({
   body: z.object({
     email: z.string().email("E-mail inválido."),
     senha: z.string().min(1, "A senha é obrigatória."),
+    recaptchaToken: z.string().optional(),
   }),
 });

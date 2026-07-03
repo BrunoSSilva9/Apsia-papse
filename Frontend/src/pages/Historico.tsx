@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { unwrapApiResponse } from "../utils/apiResponse";
 import { Search, ChevronRight, History, Filter, X } from "lucide-react";
 import { getHistorico } from "../services/api";
 import PatientCard from "../components/shared/PatientCard";
@@ -68,7 +69,8 @@ const Historical = () => {
       setLoading(true);
       try {
         const response = await getHistorico();
-        const mapped = response.data.map((item: any) => ({
+        const unwrapped = unwrapApiResponse<any[]>(response.data);
+        const mapped = unwrapped.map((item: any) => ({
           ...item.paciente,
           idHistorico: item.idHistorico,
           relationId: item.idHistorico,

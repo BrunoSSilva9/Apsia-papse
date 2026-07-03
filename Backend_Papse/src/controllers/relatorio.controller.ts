@@ -1,24 +1,23 @@
-import { type Request, type Response } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import {
   createRelatorioService,
   getRelatoriosByPacienteService,
 } from "../services/relatorio.service.js";
 import { verificarVinculoService } from "../services/vinculo.service.js";
+import { AppError } from "../errors/AppError.js";
 
-export const createRelatorio = async (req: Request, res: Response) => {
+export const createRelatorio = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { idPaciente, idBolsista, texto } = req.body;
 
     if (!idPaciente || !idBolsista || !texto) {
-      return res
-        .status(400)
-        .json({ message: "Todos os campos são obrigatórios." });
+      throw new AppError("Todos os campos são obrigatórios.", 400);
     }
 
     if (req.user && req.user.role === "BOLSISTA") {
       const temVinculo = await verificarVinculoService(Number(idPaciente), req.user.id);
       if (!temVinculo) {
-        return res.status(403).json({ message: "Acesso negado: Paciente não vinculado a este bolsista." });
+        throw new AppError("Acesso negado: Paciente não vinculado a este bolsista.", 403);
       }
     }
 
@@ -28,32 +27,34 @@ export const createRelatorio = async (req: Request, res: Response) => {
       texto,
     );
 
-    return res.status(201).json(novoRelatorio);
+    return res.status(201).json({
+      success: true,
+      data: novoRelatorio,
+      message: "Relatório criado com sucesso."
+    });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Erro interno do servidor." });
+    next(error);
   }
 };
 
-export const getRelatorios = async (req: Request, res: Response) => {
+export const getRelatorios = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { idPaciente } = req.params;
 
     if (!idPaciente) {
-      return res.status(400).json({ message: "ID do paciente é obrigatório." });
+      throw new AppError("ID do paciente é obrigatório.", 400);
     }
 
     if (req.user && req.user.role === "BOLSISTA") {
       const temVinculo = await verificarVinculoService(Number(idPaciente), req.user.id);
       if (!temVinculo) {
-        return res.status(403).json({ message: "Acesso negado: Paciente não vinculado a este bolsista." });
+        throw new AppError("Acesso negado: Paciente não vinculado a este bolsista.", 403);
       }
     }
 
     const relatorios = await getRelatoriosByPacienteService(Number(idPaciente));
     return res.status(200).json(relatorios);
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Erro interno do servidor." });
+    next(error);
   }
 };

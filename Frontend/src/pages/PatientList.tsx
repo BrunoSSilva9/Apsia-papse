@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
+import { unwrapApiResponse } from "../utils/apiResponse";
 import { Search, Info, ChevronRight, Send, X, User } from "lucide-react";
 import {
   fetchInscricoes,
@@ -72,13 +74,15 @@ const PatientList = ({
   const [reportText, setReportText] = useState("");
   const [reportPatient, setReportPatient] = useState<any>(null);
   const [reportLoading, setReportLoading] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const { user } = useAuth();
 
   const loadBolsistas = useCallback(async () => {
     try {
       const response = await getBolsistas();
-      const filtered = response.data.filter(
+      const unwrappedData = unwrapApiResponse<any[]>(response.data);
+      const filtered = unwrappedData.filter(
         (b: any) => b.role?.toUpperCase() === "BOLSISTA" && !b.data_saida,
       );
       setBolsistas(filtered);
@@ -91,7 +95,8 @@ const PatientList = ({
     setLoading(true);
     try {
       const response = await fetchInscricoes(status);
-      const mapped = response.data.map((item: any) => {
+      const unwrappedData = unwrapApiResponse<any[]>(response.data);
+      const mapped = unwrappedData.map((item: any) => {
         if (!item.paciente) return { ...item, motivo: item.relato };
 
         let relationId;
@@ -140,7 +145,8 @@ const PatientList = ({
   const removePatientFromHistory = async (patientId: number) => {
     try {
       const response = await getHistorico();
-      const records = response.data.filter(
+      const unwrappedData = unwrapApiResponse<any[]>(response.data);
+      const records = unwrappedData.filter(
         (h: any) =>
           h.idPaciente === patientId ||
           (h.paciente && h.paciente.idPaciente === patientId),
@@ -159,11 +165,16 @@ const PatientList = ({
     targetStatus: string,
     assignedBolsistaId: string | null = null,
   ) => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
     const bolsistaId = assignedBolsistaId
       ? parseInt(String(assignedBolsistaId))
       : user?.idBolsista;
     const patientId = patient.idPaciente || patient.id;
-    if (!bolsistaId) return alert("Erro: Bolsista não identificado.");
+    if (!bolsistaId) {
+      setIsTransitioning(false);
+      return toast.error("Erro: Bolsista não identificado.");
+    }
 
     try {
       if (status === targetStatus) {
@@ -175,7 +186,7 @@ const PatientList = ({
         else if (status === "espera_regulares")
           await updateListaRegular(patient.relationId, payload);
         loadPatients();
-        alert("Bolsista atualizado com sucesso!");
+        toast.success("Bolsista atualizado com sucesso!");
         return;
       }
       if (targetStatus === "lista_de_espera") {
@@ -189,48 +200,50 @@ const PatientList = ({
           data_inicio_atendimento: new Date().toISOString(),
           qtde_sessoes: 0,
         });
-        await deleteCurrent(patient);
+        // O service já remove da ListaEspera internamente
+        if (status !== "lista_de_espera") await deleteCurrent(patient);
         await removePatientFromHistory(patientId);
       } else if (targetStatus === "espera_regulares") {
-        if (status === "lista_de_espera")
+        // Mover direto da ListaEspera (o service remove a LE internamente)
+        if (status === "lista_de_espera") {
           await createListaRegular({
             idPaciente: patientId,
             idBolsista: bolsistaId,
           });
-        else {
+        } else {
+          // De qualquer outra lista: deletar atual, adicionar à LE, depois mover para LR
+          await deleteCurrent(patient);
           await createListaEspera({ idPaciente: patientId });
           await createListaRegular({
             idPaciente: patientId,
             idBolsista: bolsistaId,
           });
-          await deleteCurrent(patient);
           await removePatientFromHistory(patientId);
         }
       } else if (targetStatus === "atendimento_regular") {
-        if (status === "lista_de_espera" || status === "espera_regulares")
-          await createRegular({
-            idPaciente: patientId,
-            idBolsista: bolsistaId,
-            data_inicio_atendimento: new Date().toISOString(),
-            qtde_sessoes: 0,
-          });
-        else {
-          await createListaEspera({ idPaciente: patientId });
-          await createRegular({
-            idPaciente: patientId,
-            idBolsista: bolsistaId,
-            data_inicio_atendimento: new Date().toISOString(),
-            qtde_sessoes: 0,
-          });
-          await deleteCurrent(patient);
-          await removePatientFromHistory(patientId);
-        }
+        // O service do Regular aceita LE, ListaRegular e Protocolo como fonte
+        await createRegular({
+          idPaciente: patientId,
+          idBolsista: bolsistaId,
+          data_inicio_atendimento: new Date().toISOString(),
+          qtde_sessoes: 0,
+        });
+        // O service já remove da lista anterior internamente
+        await removePatientFromHistory(patientId);
       }
       setPatients(patients.filter((p) => (p.idPaciente || p.id) !== patientId));
-      alert("Movimentação realizada com sucesso!");
-    } catch (error) {
+      toast.success("Movimentação realizada com sucesso!");
+    } catch (error: any) {
       console.error(error);
-      alert("Erro ao realizar a ação.");
+      const status_code = error?.response?.status;
+      if (status_code === 409) {
+        toast.warning("O paciente já está nessa lista ou estado. Recarregando...");
+        loadPatients();
+      } else {
+        toast.error("Erro ao realizar a ação.");
+      }
+    } finally {
+      setIsTransitioning(false);
     }
   };
 
@@ -264,7 +277,7 @@ const PatientList = ({
   };
 
   const handleEncerrar = async (patient: any) => {
-    if (confirm("Tem certeza que deseja encerrar a inscrição?")) {
+    if (confirm("Tem certeza que deseja inativar o paciente?")) {
       try {
         await deleteCurrent(patient);
         setPatients(
@@ -273,10 +286,10 @@ const PatientList = ({
               (p.idPaciente || p.id) !== (patient.idPaciente || patient.id),
           ),
         );
-        alert("Inscrição encerrada com sucesso.");
+        toast.success("Paciente inativado com sucesso.");
       } catch (error) {
-        console.error("Erro ao encerrar:", error);
-        alert("Erro ao encerrar a inscrição.");
+        console.error("Erro ao inativar:", error);
+        toast.error("Erro ao inativar o paciente.");
       }
     }
   };
@@ -289,8 +302,8 @@ const PatientList = ({
 
   const handleSubmitReport = async () => {
     if (!reportText.trim())
-      return alert("O texto do relatório não pode estar vazio.");
-    if (!user?.idBolsista) return alert("Erro: Usuário não identificado.");
+      return toast.error("O texto do relatório não pode estar vazio.");
+    if (!user?.idBolsista) return toast.error("Erro: Usuário não identificado.");
 
     setReportLoading(true);
     try {
@@ -299,11 +312,11 @@ const PatientList = ({
         idBolsista: user.idBolsista,
         texto: reportText,
       });
-      alert("Relatório salvo com sucesso!");
+      toast.success("Relatório salvo com sucesso!");
       setShowReportModal(false);
     } catch (error) {
       console.error("Erro ao salvar relatório:", error);
-      alert("Erro ao salvar o relatório.");
+      toast.error("Erro ao salvar o relatório.");
     } finally {
       setReportLoading(false);
     }
@@ -438,7 +451,8 @@ const PatientList = ({
               </button>
               <button
                 onClick={confirmBolsistaSelection}
-                className={`px-4 py-2 text-white rounded font-medium transition-colors ${theme.bg} hover:opacity-90`}
+                disabled={isTransitioning || !selectedBolsista}
+                className={`px-4 py-2 text-white rounded font-medium transition-colors ${theme.bg} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 Confirmar
               </button>
