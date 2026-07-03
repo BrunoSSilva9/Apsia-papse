@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import { prisma } from "./lib/prisma.js";
 
 import pacienteRoutes from "./routes/paciente.routes.js";
 import protocoloRoutes from "./routes/protocolo.routes.js";
@@ -61,6 +62,32 @@ app.use("/api/auditoria", auditRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "API está funcionando!" });
+});
+
+// Health check — sem autenticação
+app.get("/api/health", async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({
+      success: true,
+      data: {
+        status: "ok",
+        database: "connected",
+        timestamp: new Date().toISOString(),
+      },
+      message: "API saudável.",
+    });
+  } catch {
+    res.status(503).json({
+      success: false,
+      data: {
+        status: "error",
+        database: "disconnected",
+        timestamp: new Date().toISOString(),
+      },
+      message: "Falha na conexão com o banco de dados.",
+    });
+  }
 });
 
 // Middleware Global de Erro (deve vir depois de todas as rotas)

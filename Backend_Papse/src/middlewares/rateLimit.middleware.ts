@@ -2,11 +2,11 @@ import rateLimit from "express-rate-limit";
 
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  limit: 5, // Limita a 5 tentativas por IP
+  limit: 10, // Limita a 5 tentativas por IP
   message: {
     message: "Muitas tentativas de login. Tente novamente após 15 minutos.",
   },
-  standardHeaders: "draft-7", 
+  standardHeaders: "draft-7",
   legacyHeaders: false,
 });
 
