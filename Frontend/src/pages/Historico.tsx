@@ -147,7 +147,7 @@ const Historical = () => {
   return (
     <div className="w-full font-nunito">
       <div className="flex items-center text-sm text-gray-500 mb-6">
-        <span className="font-bold text-blue-900 text-lg">PAPSE</span>
+        <span className="font-bold text-blue-900 text-lg">APSIA</span>
         <span className="mx-2 text-gray-300">|</span>
         <Link to="/admin" className="hover:text-blue-700">
           Painel Administrativo

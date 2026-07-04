@@ -341,9 +341,9 @@ const Formulario = () => {
                   <strong className="block mb-1 text-gray-800">
                     Termo de Consentimento (LGPD)
                   </strong>
-                  Ao selecionar a opção abaixo, autorizo o sistema PAPSE a
-                  tratar meus dados pessoais e sensíveis para fins exclusivos de
-                  triagem e atendimento psicológico. Estou ciente de que as
+                  Ao selecionar a opção abaixo, autorizo o sistema APSIA a
+                  coletar e armazenar os dados sensíveis e pessoais fornecidos para fins
+                  exclusivos de triagem e atendimento psicológico. Estou ciente de que as
                   informações são sigilosas, restritas à equipe clínica e que
                   posso revogar este consentimento a qualquer momento. O
                   tratamento segue a Lei nº 13.709/2018.

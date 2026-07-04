@@ -10,6 +10,7 @@ import {
 import { unwrapApiResponse } from "../utils/apiResponse";
 import { useAuth } from "../hooks/useAuth";
 import HeaderMenu from "../components/shared/HeaderMenu";
+import Footer from "../components/shared/Footer";
 import PatientCard from "../components/shared/PatientCard";
 import { X, Send, User, FileText, Clock } from "lucide-react";
 
@@ -171,15 +172,16 @@ const Bolsista = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-nunito">
+    <div className="min-h-screen bg-gray-50 font-nunito flex flex-col">
       <header className="bg-slate-900 text-white px-8 py-4 flex justify-between items-center shadow-md">
         <h1 className="text-xl font-bold tracking-wide">
-          PAPSE | Painel do Bolsista
+          APSIA | Painel do Bolsista
         </h1>
         <HeaderMenu variant="logged-in" />
       </header>
 
-      <div className="max-w-5xl mx-auto p-8">
+      <main className="flex-1 w-full">
+        <div className="max-w-5xl mx-auto p-8">
         <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-500">
           <h2 className="text-2xl font-bold text-slate-800">
             Olá, {user?.nome}
@@ -370,6 +372,11 @@ const Bolsista = () => {
           </div>
         </div>
       )}
+      </main>
+
+      <div className="w-full bg-slate-900 mt-auto">
+        <Footer />
+      </div>
     </div>
   );
 };

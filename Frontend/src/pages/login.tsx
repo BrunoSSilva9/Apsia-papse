@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import HeaderMenu from "../components/shared/HeaderMenu";
+import Footer from "../components/shared/Footer";
 import imgLogin from "../assets/images/img-login.svg";
 
 interface LoginFormInputs {
@@ -158,10 +159,15 @@ const Login = () => {
           <img
             src={imgLogin}
             alt="Ilustração de login"
-            className="max-w-[250px] h-auto"
+            className="max-w-[250px] h-auto mb-8"
           />
         </div>
+
       </section>
+
+      <div className="absolute bottom-0 left-0 w-full bg-[#2B468B]/95 lg:bg-[#2B468B]/90 backdrop-blur-sm z-10 border-t border-white/10">
+        <Footer />
+      </div>
     </div>
   );
 };
