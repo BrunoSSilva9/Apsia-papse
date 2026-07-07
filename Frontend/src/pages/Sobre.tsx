@@ -6,24 +6,24 @@ const Sobre = () => {
   return (
     <div className="h-screen w-full bg-[#5373d6] relative flex flex-col text-white font-sans overflow-y-auto overflow-x-hidden">
       <nav className="flex justify-between items-center px-8 py-6 relative z-50">
-        <div className="flex gap-8 items-center">
+        <div className="flex gap-4 md:gap-8 items-center">
           <Link
             to="/"
-            className="text-white/80 hover:text-white no-underline text-xs md:text-sm tracking-wide transition-colors uppercase"
+            className="text-white/80 hover:text-white no-underline font-medium text-sm tracking-wide transition-colors"
           >
-            PRINCIPAL
+            PÁGINA INICIAL
           </Link>
           <Link
             to="/sobre"
-            className="text-white font-bold text-xs md:text-sm tracking-wide transition-colors uppercase"
+            className="text-white font-bold text-sm tracking-wide transition-colors"
           >
             SOBRE
           </Link>
           <Link
             to="/formulario"
-            className="text-white/80 hover:text-white no-underline text-xs md:text-sm tracking-wide transition-colors uppercase"
+            className="text-white/80 hover:text-white no-underline font-medium text-sm tracking-wide transition-colors"
           >
-            FORMULÁRIO
+            INSCRIÇÃO
           </Link>
         </div>
 

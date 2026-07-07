@@ -14,21 +14,21 @@ const Home = () => {
         <div className="flex gap-4 md:gap-8 items-center">
           <Link
             to="/"
-            className="text-white no-underline font-medium text-sm tracking-wide hover:opacity-80 transition-opacity"
+            className="text-white font-bold text-sm tracking-wide transition-colors"
           >
-            PRINCIPAL
+            PÁGINA INICIAL
           </Link>
           <Link
             to="/sobre"
-            className="text-white no-underline font-medium text-sm tracking-wide hover:opacity-80 transition-opacity"
+            className="text-white/80 hover:text-white no-underline font-medium text-sm tracking-wide transition-colors"
           >
             SOBRE
           </Link>
           <Link
             to="/formulario"
-            className="text-white no-underline font-medium text-sm tracking-wide hover:opacity-80 transition-opacity"
+            className="text-white/80 hover:text-white no-underline font-medium text-sm tracking-wide transition-colors"
           >
-            FORMULÁRIO
+            INSCRIÇÃO
           </Link>
         </div>
 
@@ -69,7 +69,7 @@ const Home = () => {
 
       <div className="absolute bottom-0 left-0 bg-[#243b75] w-full lg:w-[60%] [clip-path:none] lg:[clip-path:polygon(0_0,_90%_0,_100%_100%,_0%_100%)] z-20">
         <div className="p-4 md:p-6 lg:pr-24">
-          <Footer className="text-left !py-0 !text-white" />
+          <Footer className="text-left !py-0 !text-white" shortText={true} />
         </div>
       </div>
     </div>

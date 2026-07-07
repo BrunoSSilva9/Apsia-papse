@@ -11,6 +11,7 @@ import { unwrapApiResponse } from "../utils/apiResponse";
 import { useAuth } from "../hooks/useAuth";
 import HeaderMenu from "../components/shared/HeaderMenu";
 import Footer from "../components/shared/Footer";
+import { toast } from "react-toastify";
 import PatientCard from "../components/shared/PatientCard";
 import { X, Send, User, FileText, Clock } from "lucide-react";
 
@@ -141,8 +142,8 @@ const Bolsista = () => {
 
   const handleSubmitReport = async () => {
     if (!reportText.trim())
-      return alert("O texto do relatório não pode estar vazio.");
-    if (!user?.idBolsista) return alert("Erro: Usuário não identificado.");
+      return toast.warning("O texto do relatório não pode estar vazio.");
+    if (!user?.idBolsista) return toast.error("Usuário não identificado. Faça login novamente.");
 
     setReportLoading(true);
     try {
@@ -151,11 +152,11 @@ const Bolsista = () => {
         idBolsista: user.idBolsista,
         texto: reportText,
       });
-      alert("Relatório salvo com sucesso!");
+      toast.success("Relatório salvo com sucesso!");
       setShowReportModal(false);
     } catch (error) {
       console.error("Erro ao salvar relatório:", error);
-      alert("Erro ao salvar o relatório.");
+      toast.error("Não foi possível salvar o relatório no momento.");
     } finally {
       setReportLoading(false);
     }

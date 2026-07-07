@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect } from "react";
+import { useAuth } from "../../hooks/useAuth";
 import {
   User,
   MoreVertical,
@@ -9,7 +10,7 @@ import {
   Hash,
   Calendar,
   UserCheck,
-  //FileText,
+  FileText,
 } from "lucide-react";
 
 interface Patient {
@@ -52,6 +53,8 @@ const PatientCard = ({
   const [expanded, setExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
 
   const displayId = patient.id || patient.idPaciente || "---";
 
@@ -110,61 +113,63 @@ const PatientCard = ({
                 {patient.nome}
               </h3>
 
-              <div className="relative" ref={menuRef}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuOpen(!menuOpen);
-                  }}
-                  className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
-                >
-                  <MoreVertical size={20} />
-                </button>
+              {(onEncaminhar?.length || onEncerrar || (isAdmin && onAddRelatorio)) ? (
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen(!menuOpen);
+                    }}
+                    className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+                  >
+                    <MoreVertical size={20} />
+                  </button>
 
-                {menuOpen && (
-                  <div className="absolute right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 py-1 animate-fade-in origin-top-right">
-                    {onEncaminhar?.map((t, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          t.action(patient);
-                          setMenuOpen(false);
-                        }}
-                        className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors"
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-
-                    {onAddRelatorio && (
-                      <button
-                        onClick={() => {
-                          onAddRelatorio(patient);
-                          setMenuOpen(false);
-                        }}
-                        className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-600 transition-colors border-t border-gray-100"
-                      >
-                        Adicionar Relatório
-                      </button>
-                    )}
-
-                    {onEncerrar && (
-                      <>
-                        <div className="border-t border-gray-100 my-1"></div>
+                  {menuOpen && (
+                    <div className="absolute right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 py-1 animate-fade-in origin-top-right">
+                      {onEncaminhar?.map((t, idx) => (
                         <button
+                          key={idx}
                           onClick={() => {
-                            onEncerrar(patient);
+                            t.action(patient);
                             setMenuOpen(false);
                           }}
-                          className="block w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors"
                         >
-                          Encerrar Inscrição
+                          {t.label}
                         </button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
+                      ))}
+
+                      {isAdmin && onAddRelatorio && (
+                        <button
+                          onClick={() => {
+                            onAddRelatorio(patient);
+                            setMenuOpen(false);
+                          }}
+                          className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-600 transition-colors border-t border-gray-100"
+                        >
+                          Adicionar Relatório
+                        </button>
+                      )}
+
+                      {onEncerrar && (
+                        <>
+                          <div className="border-t border-gray-100 my-1"></div>
+                          <button
+                            onClick={() => {
+                              onEncerrar(patient);
+                              setMenuOpen(false);
+                            }}
+                            className="block w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            Encerrar Inscrição
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : null}
             </div>
 
             {!expanded && (
@@ -227,13 +232,23 @@ const PatientCard = ({
               </div>
             )}
 
-            <div className="mt-3 text-center md:text-left">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-center md:text-left">
               <button
                 onClick={() => setExpanded(!expanded)}
                 className={`text-sm font-medium ${activeTextClass} focus:outline-none`}
               >
                 {expanded ? "Ver menos" : "Ver mais"}
               </button>
+
+              {!isAdmin && onAddRelatorio && (
+                <button
+                  onClick={() => onAddRelatorio(patient)}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 hover:shadow"
+                >
+                  <FileText size={16} />
+                  Abrir Prontuário
+                </button>
+              )}
             </div>
           </div>
         </div>

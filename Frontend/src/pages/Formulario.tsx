@@ -7,6 +7,7 @@ import illustration from "../assets/images/formulario_illustration.png";
 import HeaderMenu from "../components/shared/HeaderMenu";
 import { CheckCircle } from "lucide-react";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import { toast } from "react-toastify";
 
 const CURSOS_UNIFESSPA = [
   "Administração",
@@ -75,20 +76,20 @@ const Formulario = () => {
 
     try {
       if (!executeRecaptcha) {
-        alert("Erro de segurança: reCAPTCHA não carregado.");
+        toast.error("Não foi possível validar a segurança do formulário. Atualize a página e tente novamente.");
         setIsSubmitting(false);
         return;
       }
       const recaptchaToken = await executeRecaptcha("formulario_paciente");
 
       if (!/^[0-9]+$/.test(data.telefone)) {
-        alert("O campo Telefone deve conter apenas números.");
+        toast.warning("O campo Telefone deve conter apenas números.");
         setIsSubmitting(false);
         return;
       }
 
       if (!/^[0-9]+$/.test(data.matricula)) {
-        alert("O campo Matrícula deve conter apenas números.");
+        toast.warning("O campo Matrícula deve conter apenas números.");
         setIsSubmitting(false);
         return;
       }
@@ -98,7 +99,7 @@ const Formulario = () => {
       hoje.setHours(0, 0, 0, 0);
 
       if (dataNascimento > hoje) {
-        alert("Por favor, insira uma data de nascimento válida.");
+        toast.warning("Por favor, insira uma data de nascimento válida.");
         setIsSubmitting(false);
         return;
       }
@@ -123,8 +124,8 @@ const Formulario = () => {
       reset();
     } catch (error: any) {
       console.error("Erro completo:", error);
-      alert(
-        "Ocorreu um erro. Verifique se a matrícula já não está cadastrada.",
+      toast.error(
+        "Não foi possível enviar sua inscrição no momento. Verifique os dados e tente novamente."
       );
     } finally {
       setIsSubmitting(false);
@@ -143,7 +144,7 @@ const Formulario = () => {
             to="/"
             className="text-white/80 hover:text-white no-underline font-medium text-sm tracking-wide transition-colors"
           >
-            PRINCIPAL
+            PÁGINA INICIAL
           </Link>
           <Link
             to="/sobre"
@@ -155,7 +156,7 @@ const Formulario = () => {
             to="/formulario"
             className="text-white font-bold text-sm tracking-wide transition-colors"
           >
-            FORMULÁRIO
+            INSCRIÇÃO
           </Link>
         </div>
 
