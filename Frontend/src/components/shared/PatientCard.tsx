@@ -148,7 +148,7 @@ const PatientCard = ({
                           }}
                           className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-600 transition-colors border-t border-gray-100"
                         >
-                          Adicionar Relatório
+                          Abrir Prontuário
                         </button>
                       )}
 

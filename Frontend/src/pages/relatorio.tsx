@@ -1,24 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { unwrapApiResponse } from "../utils/apiResponse";
-import { Search, FileText, User, Calendar, ChevronRight } from "lucide-react";
-import { fetchInscricoes, getRelatoriosPorPaciente } from "../services/api";
-
-interface Relatorio {
-  idRelatorio: number;
-  texto: string;
-  data_criacao: string;
-  colaborador: {
-    nome: string;
-    matricula: string;
-  };
-}
+import { Search, FileText, User, ChevronRight, CalendarDays, CheckCircle2, XCircle } from "lucide-react";
+import { fetchInscricoes, getRelatoriosPorPaciente, getSessoesByPaciente } from "../services/api";
 
 const Report = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [patients, setPatients] = useState<any[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
-  const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
+  const [pastSessoes, setPastSessoes] = useState<any[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [loadingReports, setLoadingReports] = useState(false);
 
@@ -47,12 +37,33 @@ const Report = () => {
     setSelectedPatient(patient);
     setLoadingReports(true);
     try {
-      const response = await getRelatoriosPorPaciente(patient.idPaciente);
-      const unwrapped = unwrapApiResponse<any[]>(response.data);
-      setRelatorios(unwrapped);
+      const [sessoesRes, relatoriosRes] = await Promise.all([
+        getSessoesByPaciente(patient.idPaciente),
+        getRelatoriosPorPaciente(patient.idPaciente)
+      ]);
+      const sessoes = unwrapApiResponse<any[]>(sessoesRes.data) || [];
+      const relatorios = unwrapApiResponse<any[]>(relatoriosRes.data) || [];
+
+      const relatoriosAvulsos = relatorios
+        .filter((r) => !r.idSessao)
+        .map((r) => ({
+          idSessao: `rel_${r.idRelatorio}`,
+          dataSessao: r.data_criacao,
+          status: "RELATORIO_AVULSO",
+          modalidade: "OUTRO",
+          observacao: null,
+          relatorio: { texto: r.texto },
+          colaborador: r.colaborador,
+        }));
+
+      const merged = [...sessoes, ...relatoriosAvulsos].sort(
+        (a, b) => new Date(b.dataSessao).getTime() - new Date(a.dataSessao).getTime()
+      );
+
+      setPastSessoes(merged);
     } catch (error) {
-      console.error("Erro ao carregar relatórios", error);
-      setRelatorios([]);
+      console.error("Erro ao carregar relatórios/sessões", error);
+      setPastSessoes([]);
     } finally {
       setLoadingReports(false);
     }
@@ -129,49 +140,82 @@ const Report = () => {
                 <div className="text-center py-10 text-gray-400">
                   Carregando relatórios...
                 </div>
-              ) : relatorios.length === 0 ? (
+              ) : pastSessoes.length === 0 ? (
                 <div className="text-center py-10 text-gray-400 bg-white rounded-lg border border-dashed border-gray-300">
-                  Nenhum relatório encontrado para este paciente.
+                  Nenhum registro encontrado para este paciente.
                 </div>
               ) : (
-                <div className="space-y-6">
-                  {relatorios.map((relatorio) => (
-                    <div
-                      key={relatorio.idRelatorio}
-                      className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 relative group hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex justify-between items-start mb-4 pb-3 border-b border-gray-50">
-                        <div className="flex items-center gap-2">
-                          <div className="bg-blue-100 p-1.5 rounded-full text-blue-600">
-                            <User size={16} />
+                <div className="space-y-4 max-w-3xl mx-auto">
+                  {pastSessoes.map((sessao) => {
+                    const statusLabel: Record<string, string> = {
+                      REALIZADA: "Sessao realizada",
+                      FALTA_JUSTIFICADA: "Falta justificada",
+                      FALTA_NAO_JUSTIFICADA: "Falta nao justificada",
+                      CANCELADA: "Cancelada",
+                      RELATORIO_AVULSO: "Relatorio Avulso",
+                    };
+                    const statusColor: Record<string, string> = {
+                      REALIZADA: "text-green-600 bg-green-50",
+                      FALTA_JUSTIFICADA: "text-amber-600 bg-amber-50",
+                      FALTA_NAO_JUSTIFICADA: "text-red-600 bg-red-50",
+                      CANCELADA: "text-gray-500 bg-gray-100",
+                      RELATORIO_AVULSO: "text-blue-600 bg-blue-50",
+                    };
+                    const dataFormatada = new Date(sessao.dataSessao).toLocaleDateString("pt-BR", {
+                      day: "2-digit", month: "2-digit", year: "numeric",
+                    });
+                    
+                    return (
+                      <div
+                        key={sessao.idSessao}
+                        className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 relative group hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="flex items-center gap-2">
+                            <CalendarDays size={16} className="text-gray-400" />
+                            <span className="text-sm font-semibold text-gray-600">
+                              {dataFormatada}
+                            </span>
                           </div>
-                          <div>
-                            <p className="text-sm font-bold text-gray-700">
-                              {relatorio.colaborador.nome}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              Bolsista Responsável
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-md ${statusColor[sessao.status] ?? "text-gray-600 bg-gray-100"}`}>
+                            {statusLabel[sessao.status] ?? sessao.status}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mb-3 pb-3 border-b border-gray-50">
+                          <User size={14} className="text-gray-400" />
+                          <span className="text-sm text-gray-500">
+                            Responsável: <span className="font-medium text-gray-700">{sessao.colaborador?.nome || "Bolsista"}</span>
+                          </span>
+                        </div>
+                        {sessao.relatorio ? (
+                          <div className="mt-2">
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <CheckCircle2 size={14} className="text-green-500" />
+                              <span className="text-sm text-green-600 font-medium">Relatório disponível</span>
+                            </div>
+                            <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap bg-gray-50 p-3 rounded-lg border border-gray-100">
+                              {sessao.relatorio.texto}
                             </p>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
-                          <Calendar size={12} />
-                          {new Date(relatorio.data_criacao).toLocaleDateString(
-                            "pt-BR",
-                          )}{" "}
-                          às{" "}
-                          {new Date(relatorio.data_criacao).toLocaleTimeString(
-                            "pt-BR",
-                            { hour: "2-digit", minute: "2-digit" },
-                          )}
-                        </div>
+                        ) : (
+                          sessao.status !== "REALIZADA" && sessao.status !== "RELATORIO_AVULSO" && (
+                            <div className="flex items-center gap-1.5 mt-2">
+                              <XCircle size={14} className="text-gray-400" />
+                              <span className="text-sm text-gray-500">Sem relatorio clinico</span>
+                            </div>
+                          )
+                        )}
+                        {sessao.observacao && (
+                          <div className="mt-3 bg-amber-50 p-3 rounded-lg border border-amber-100">
+                            <p className="text-sm text-amber-800 italic">
+                              <span className="font-semibold not-italic">Observação: </span>
+                              {sessao.observacao}
+                            </p>
+                          </div>
+                        )}
                       </div>
-
-                      <div className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
-                        {relatorio.texto}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

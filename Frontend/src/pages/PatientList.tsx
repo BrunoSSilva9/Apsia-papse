@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { unwrapApiResponse } from "../utils/apiResponse";
-import { Search, Info, ChevronRight, Send, X, User, FileText, Clock } from "lucide-react";
+import { Search, Info, ChevronRight, Send, X, User, FileText, Clock, CalendarDays, CheckCircle2, XCircle } from "lucide-react";
 import {
   fetchInscricoes,
   createProtocolo,
@@ -21,6 +21,7 @@ import {
   getHistorico,
   deleteHistorico,
   createRelatorio,
+  getSessoesByPaciente,
   getRelatoriosPorPaciente,
 } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
@@ -77,8 +78,8 @@ const PatientList = ({
   const [reportLoading, setReportLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const [pastReports, setPastReports] = useState<any[]>([]);
-  const [loadingPastReports, setLoadingPastReports] = useState(false);
+  const [pastSessoes, setPastSessoes] = useState<any[]>([]);
+  const [loadingPastSessoes, setLoadingPastSessoes] = useState(false);
 
   const { user } = useAuth();
 
@@ -298,37 +299,50 @@ const PatientList = ({
     }
   };
 
-  const loadPastReports = async (patientId: number) => {
-    setLoadingPastReports(true);
+  const loadPastSessoes = async (patientId: number) => {
+    setLoadingPastSessoes(true);
     try {
-      const response = await getRelatoriosPorPaciente(patientId);
-      const unwrapped = unwrapApiResponse<any[]>(response.data);
-      const reports = unwrapped || [];
+      const [sessoesRes, relatoriosRes] = await Promise.all([
+        getSessoesByPaciente(patientId),
+        getRelatoriosPorPaciente(patientId)
+      ]);
+      const sessoes = unwrapApiResponse<any[]>(sessoesRes.data) || [];
+      const relatorios = unwrapApiResponse<any[]>(relatoriosRes.data) || [];
 
-      reports.sort(
-        (a: any, b: any) =>
-          new Date(b.data_criacao).getTime() -
-          new Date(a.data_criacao).getTime(),
+      const relatoriosAvulsos = relatorios
+        .filter((r) => !r.idSessao)
+        .map((r) => ({
+          idSessao: `rel_${r.idRelatorio}`,
+          dataSessao: r.data_criacao,
+          status: "RELATORIO_AVULSO",
+          modalidade: "OUTRO",
+          observacao: null,
+          relatorio: { texto: r.texto },
+          colaborador: r.colaborador,
+        }));
+
+      const merged = [...sessoes, ...relatoriosAvulsos].sort(
+        (a, b) => new Date(b.dataSessao).getTime() - new Date(a.dataSessao).getTime()
       );
 
-      setPastReports(reports);
+      setPastSessoes(merged);
     } catch (error) {
-      console.error("Erro ao carregar relatórios anteriores:", error);
-      setPastReports([]);
+      console.error("Erro ao carregar sessoes anteriores:", error);
+      setPastSessoes([]);
     } finally {
-      setLoadingPastReports(false);
+      setLoadingPastSessoes(false);
     }
   };
 
   const handleOpenReportModal = (patient: any) => {
     setReportPatient(patient);
     setReportText("");
-    setPastReports([]);
+    setPastSessoes([]);
     setShowReportModal(true);
 
     const patientId = patient.idPaciente || patient.id;
     if (patientId) {
-      loadPastReports(patientId);
+      loadPastSessoes(patientId);
     }
   };
 
@@ -506,7 +520,7 @@ const PatientList = ({
                     {reportPatient.nome}
                   </h2>
                   <p className="text-sm text-gray-500">
-                    Adicionar relatório do atendimento
+                    Prontuário do Paciente
                   </p>
                 </div>
               </div>
@@ -520,45 +534,86 @@ const PatientList = ({
 
             {/* Corpo Dividido em Duas Colunas */}
             <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-              {/* Coluna Esquerda: Histórico de Relatórios */}
+              {/* Coluna Esquerda: Timeline de Sessoes */}
               <div className="w-full md:w-1/2 bg-gray-50 border-r border-gray-200 p-6 overflow-y-auto custom-scrollbar">
                 <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold">
                   <Clock size={20} />
-                  <h3>Histórico Evolutivo</h3>
+                  <h3>Historico de Sessoes</h3>
                 </div>
 
-                {loadingPastReports ? (
+                {loadingPastSessoes ? (
                   <div className="text-center py-10 text-gray-500 text-sm">
-                    Carregando histórico...
+                    Carregando historico...
                   </div>
-                ) : pastReports.length === 0 ? (
+                ) : pastSessoes.length === 0 ? (
                   <div className="text-center py-10 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-xl">
-                    Nenhum relatório anterior encontrado.
+                    Nenhuma sessao registrada ainda.
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {pastReports.map((report) => {
-                      const d = new Date(report.data_criacao);
-                      const dataFormatada = new Intl.DateTimeFormat("pt-BR", {
-                        day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
-                      }).format(d);
+                    {pastSessoes.map((sessao: any) => {
+                      const statusLabel: Record<string, string> = {
+                        REALIZADA: "Sessao realizada",
+                        FALTA_JUSTIFICADA: "Falta justificada",
+                        FALTA_NAO_JUSTIFICADA: "Falta nao justificada",
+                        CANCELADA: "Cancelada",
+                        RELATORIO_AVULSO: "Relatorio Avulso",
+                      };
+                      const statusColor: Record<string, string> = {
+                        REALIZADA: "text-green-600 bg-green-50",
+                        FALTA_JUSTIFICADA: "text-amber-600 bg-amber-50",
+                        FALTA_NAO_JUSTIFICADA: "text-red-600 bg-red-50",
+                        CANCELADA: "text-gray-500 bg-gray-100",
+                        RELATORIO_AVULSO: "text-blue-600 bg-blue-50",
+                      };
+                      const dataFormatada = new Date(sessao.dataSessao).toLocaleDateString("pt-BR", {
+                        day: "2-digit", month: "2-digit", year: "numeric",
+                      });
                       return (
                         <div
-                          key={report.idRelatorio}
+                          key={sessao.idSessao}
                           className="bg-white p-4 rounded-xl shadow-sm border border-gray-100"
                         >
                           <div className="flex justify-between items-center mb-2">
-                            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
-                              {dataFormatada}
-                            </span>
-                            <span className="text-xs text-gray-400 flex items-center gap-1">
-                              <User size={12} />{" "}
-                              {report.colaborador?.nome || "Bolsista"}
+                            <div className="flex items-center gap-1.5">
+                              <CalendarDays size={13} className="text-gray-400" />
+                              <span className="text-xs font-semibold text-gray-600">
+                                {dataFormatada}
+                              </span>
+                            </div>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${statusColor[sessao.status] ?? "text-gray-600 bg-gray-100"}`}>
+                              {statusLabel[sessao.status] ?? sessao.status}
                             </span>
                           </div>
-                          <p className="text-gray-700 text-sm whitespace-pre-wrap">
-                            {report.texto}
-                          </p>
+                          <div className="flex items-center gap-1 mb-2">
+                            <User size={12} className="text-gray-400" />
+                            <span className="text-xs text-gray-400">
+                              {sessao.colaborador?.nome || "Bolsista"}
+                            </span>
+                          </div>
+                          {sessao.relatorio ? (
+                            <div className="mt-2 border-t border-gray-100 pt-2">
+                              <div className="flex items-center gap-1 mb-1">
+                                <CheckCircle2 size={12} className="text-green-500" />
+                                <span className="text-xs text-green-600 font-medium">Relatorio disponivel</span>
+                              </div>
+                              <p className="text-gray-700 text-xs whitespace-pre-wrap line-clamp-3">
+                                {sessao.relatorio.texto}
+                              </p>
+                            </div>
+                          ) : (
+                            sessao.status !== "REALIZADA" && sessao.status !== "RELATORIO_AVULSO" && (
+                              <div className="flex items-center gap-1 mt-1">
+                                <XCircle size={12} className="text-gray-400" />
+                                <span className="text-xs text-gray-400">Sem relatorio clinico</span>
+                              </div>
+                            )
+                          )}
+                          {sessao.observacao && (
+                            <p className="text-xs text-gray-500 italic mt-2 border-t border-gray-100 pt-2">
+                              {sessao.observacao}
+                            </p>
+                          )}
                         </div>
                       );
                     })}
@@ -566,17 +621,17 @@ const PatientList = ({
                 )}
               </div>
 
-              {/* Coluna Direita: Novo Relatório */}
+              {/* Coluna Direita: Novo Relatorio (Admin) */}
               <div className="w-full md:w-1/2 bg-white p-6 flex flex-col">
                 <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold">
                   <FileText size={20} />
-                  <h3>Novo Relatório</h3>
+                  <h3>Anotação no Prontuário</h3>
                 </div>
 
                 <textarea
                   value={reportText}
                   onChange={(e) => setReportText(e.target.value)}
-                  placeholder="Escrever relatório..."
+                  placeholder="Escrever relatorio..."
                   className="w-full flex-1 min-h-[200px] p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none resize-none bg-gray-50 text-gray-700 placeholder-gray-400"
                 />
               </div>

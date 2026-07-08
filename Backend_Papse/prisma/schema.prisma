@@ -13,6 +13,20 @@ enum Role {
   BOLSISTA
 }
 
+enum StatusSessao {
+  REALIZADA
+  FALTA_JUSTIFICADA
+  FALTA_NAO_JUSTIFICADA
+  CANCELADA
+}
+
+enum ModalidadeSessao {
+  PRESENCIAL
+  ONLINE
+  TELEFONE
+  OUTRO
+}
+
 
 model Paciente {
   idPaciente      Int       @id @default(autoincrement())
@@ -37,6 +51,7 @@ model Paciente {
   Regular     Regular[]
   Historico   Historico[]
   Relatorios  RelatorioEvolutivo[]
+  Sessoes     Sessao[]
 }
 
 model Colaborador {
@@ -57,6 +72,7 @@ model Colaborador {
   Regular      Regular[]
   Historico    Historico[]
   Relatorios   RelatorioEvolutivo[]
+  Sessoes      Sessao[]
 }
 
 model ListaEspera {
@@ -125,6 +141,10 @@ model RelatorioEvolutivo {
   texto           String   @db.Text 
   data_criacao    DateTime @default(now())
 
+  // Relação com Sessao (nullable para compatibilidade com relatórios legados)
+  idSessao        Int?     @unique
+  sessao          Sessao?  @relation(fields: [idSessao], references: [idSessao])
+
   // Relação com Paciente
   idPaciente      Int
   paciente        Paciente @relation(fields: [idPaciente], references: [idPaciente])
@@ -132,6 +152,27 @@ model RelatorioEvolutivo {
   // Relação com Colaborador (quem escreveu)
   idBolsista      Int
   colaborador     Colaborador @relation(fields: [idBolsista], references: [idBolsista], onDelete: Restrict)
+}
+
+model Sessao {
+  idSessao    Int               @id @default(autoincrement())
+  dataSessao  DateTime          @db.Date
+  status      StatusSessao
+  modalidade  ModalidadeSessao  @default(PRESENCIAL)
+  duracao     Int?
+  observacao  String?           @db.VarChar(500)
+  data_criacao DateTime         @default(now())
+
+  // Relação com Paciente
+  idPaciente  Int
+  paciente    Paciente    @relation(fields: [idPaciente], references: [idPaciente])
+
+  // Relação com Colaborador
+  idBolsista  Int
+  colaborador Colaborador @relation(fields: [idBolsista], references: [idBolsista], onDelete: Restrict)
+
+  // Relação com Relatório (1:1 opcional — só existe quando status == REALIZADA)
+  relatorio   RelatorioEvolutivo?
 }
 
 model LogAuditoria {
