@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 
 const StatusSessaoEnum = z.enum([
   "REALIZADA",
@@ -19,7 +19,12 @@ export const createSessaoSchema = z.object({
     .object({
       idPaciente: z.number().int().positive().or(z.string().transform(Number)),
       idBolsista: z.number().int().positive().or(z.string().transform(Number)),
-      dataSessao: z.string().min(10, "Data da sessao e obrigatoria."),
+      dataSessao: z.string().min(10, "Data da sessao e obrigatoria.").refine((dateStr) => {
+        // Pega a data de "hoje" no fuso do Brasil no formato YYYY-MM-DD
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+        // Compara em ordem alfabética (YYYY-MM-DD)
+        return dateStr <= todayStr;
+      }, { message: "A data da sessão não pode ser no futuro." }),
       status: StatusSessaoEnum,
       modalidade: ModalidadeSessaoEnum,
       duracao: z.number().int().positive().optional(),

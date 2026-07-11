@@ -419,6 +419,7 @@ const Bolsista = () => {
                     <label className="block text-xs font-semibold text-gray-600 mb-1">Data da Sessao *</label>
                     <input
                       type="date"
+                      max={new Date().toISOString().split("T")[0]}
                       value={sessaoData}
                       onChange={(e) => setSessaoData(e.target.value)}
                       className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"

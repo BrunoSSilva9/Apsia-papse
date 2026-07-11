@@ -1,4 +1,4 @@
-﻿import { prisma } from "../lib/prisma.js";
+import { prisma } from "../lib/prisma.js";
 import { StatusSessao, ModalidadeSessao } from "@prisma/client";
 
 export interface CreateSessaoDto {
@@ -17,7 +17,7 @@ export const createSessaoService = async (dto: CreateSessaoDto) => {
 
   const sessao = await prisma.sessao.create({
     data: {
-      dataSessao: new Date(dataSessao),
+      dataSessao: dataSessao.length === 10 ? new Date(`${dataSessao}T12:00:00.000Z`) : new Date(dataSessao),
       status,
       modalidade,
       duracao: duracao ?? null,

@@ -97,7 +97,7 @@ const PatientCard = ({
         <span className="text-sm font-semibold text-gray-700">
           {showPosition
             ? `${index + 1}º lugar na lista de espera`
-            : `Registro #${displayId}`}
+            : `Acompanhamento #${displayId}`}
         </span>
       </div>
 

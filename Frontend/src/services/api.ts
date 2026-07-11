@@ -125,4 +125,7 @@ export const createSessao = (data: any) => api.post("/sessoes", data);
 export const getSessoesByPaciente = (idPaciente: number) =>
   api.get(`/sessoes/${idPaciente}`);
 
+export const getProntuario = (idPaciente: number) =>
+  api.get(`/prontuario/${idPaciente}`);
+
 export default api;
