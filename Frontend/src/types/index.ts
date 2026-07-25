@@ -56,3 +56,39 @@ export interface WaitingListCardProps {
   icon: CardIcon;
   to?: string;
 }
+
+// ─── Dashboard ──────────────────────────────────────────────────────────────
+
+export interface BolsistaPacientes {
+  id: number;
+  nome: string;
+  pacientes: number;
+}
+
+export interface DashboardMetrics {
+  pacientes: {
+    total: number;
+    listaEspera: number;
+    protocolo: number;
+    regular: number;
+    historico: number;
+  };
+  colaboradores: {
+    total: number;
+    bolsistas: number;
+    administradores: number;
+  };
+  sessoes: {
+    realizadas: number;
+    canceladas: number;
+    faltas: number;
+    total: number;
+  };
+  relatorios: {
+    total: number;
+  };
+  auditoria: {
+    total: number;
+  };
+  bolsistasPorPacientes: BolsistaPacientes[];
+}

@@ -10,6 +10,7 @@ import Historical from "./pages/Historico";
 import Collaborators from "./pages/Collaborators";
 import Relatorio from "./pages/relatorio";
 import Auditoria from "./pages/Auditoria";
+import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import Formulario from "./pages/Formulario";
 import Sobre from "./pages/Sobre";
@@ -34,6 +35,7 @@ function App() {
           <Route element={<PrivateRoute requiredRole="ADMIN" />}>
             <Route path="/admin" element={<AdministrativePanel />}>
               <Route index element={<ManageAppointments />} />
+              <Route path="dashboard" element={<Dashboard />} />
               <Route
                 path="gerenciamento-colaboradores"
                 element={<Collaborators />}

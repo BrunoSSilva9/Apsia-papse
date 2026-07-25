@@ -14,6 +14,7 @@ import relatorioRoutes from "./routes/relatorio.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
 import sessaoRoutes from "./routes/sessao.routes.js";
 import prontuarioRoutes from "./routes/prontuario.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 
 console.log("✅ server.ts foi carregado");
 
@@ -63,6 +64,7 @@ app.use("/api/relatorios", relatorioRoutes);
 app.use("/api", sessaoRoutes);
 app.use("/api", prontuarioRoutes);
 app.use("/api/auditoria", auditRoutes);
+app.use("/api", dashboardRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "API está funcionando!" });

@@ -514,6 +514,8 @@ export const generateProntuarioPdf = (prontuario: any): void => {
 
   // ─── RODAPÉ EM TODAS AS PÁGINAS ──────────────────────────────────────────
   const totalPages = (doc as any).internal.getNumberOfPages();
+  const avisoConfidencialidade = "Documento confidencial • Contem dados pessoais e dados pessoais sensiveis protegidos pela Lei n 13.709/2018 (LGPD). O acesso, utilizacao, reproducao, armazenamento ou compartilhamento nao autorizado e proibido. Este documento deve ser tratado em conformidade com a legislacao vigente e com os principios eticos estabelecidos pelo Conselho Federal de Psicologia (CFP).";
+
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(7);
@@ -527,6 +529,11 @@ export const generateProntuarioPdf = (prontuario: any): void => {
       PW / 2, PAGE_HEIGHT - FOOTER_HEIGHT + 4,
       { align: "center", maxWidth: CW }
     );
+
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(7);
+    const avisoLines = doc.splitTextToSize(avisoConfidencialidade, CW);
+    doc.text(avisoLines, PW / 2, PAGE_HEIGHT - FOOTER_HEIGHT + 9, { align: "center" });
   }
 
   // ─── DOWNLOAD ────────────────────────────────────────────────────────────

@@ -128,4 +128,6 @@ export const getSessoesByPaciente = (idPaciente: number) =>
 export const getProntuario = (idPaciente: number) =>
   api.get(`/prontuario/${idPaciente}`);
 
+export const getDashboardMetrics = () => api.get("/dashboard/metrics");
+
 export default api;
