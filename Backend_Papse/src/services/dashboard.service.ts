@@ -88,6 +88,7 @@ export class DashboardService {
       prisma.colaborador.findMany({
         where: {
           role: Role.BOLSISTA,
+          data_saida: null, // apenas bolsistas ativos (sem data de saída)
         },
         select: {
           idBolsista: true,
