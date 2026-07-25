@@ -15,6 +15,7 @@ import auditRoutes from "./routes/audit.routes.js";
 import sessaoRoutes from "./routes/sessao.routes.js";
 import prontuarioRoutes from "./routes/prontuario.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import { startAuditCleanupJob } from "./jobs/auditCleanup.job.js";
 
 console.log("✅ server.ts foi carregado");
 
@@ -101,4 +102,6 @@ app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
+  // Inicia o job de limpeza automática de logs de auditoria
+  startAuditCleanupJob();
 });
