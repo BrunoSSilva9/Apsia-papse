@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from "express";
-import { DashboardService } from "../services/dashboard.service.js";
+import { DashboardService, parsePeriod } from "../services/dashboard.service.js";
 
 const dashboardService = new DashboardService();
 
@@ -10,7 +10,8 @@ export class DashboardController {
     next: NextFunction
   ) => {
     try {
-      const metrics = await dashboardService.getMetrics();
+      const period = parsePeriod(req.query.period);
+      const metrics = await dashboardService.getMetrics(period);
 
       res.status(200).json({
         success: true,

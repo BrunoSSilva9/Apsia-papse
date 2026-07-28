@@ -1,19 +1,32 @@
 import { prisma } from "../lib/prisma.js";
 import { Role } from "@prisma/client";
 
+// ─── Tipos ────────────────────────────────────────────────────────────────────
+
+export type DashboardPeriod = "mes" | "trimestre" | "semestre" | "ano" | "total";
+
+export interface PacienteResumoDto {
+  id: number;
+  nome: string;
+  tipo: "Protocolo" | "Regular";
+}
+
 export interface BolsistaPacientesDto {
   id: number;
   nome: string;
   pacientes: number;
+  pacientesList: PacienteResumoDto[];
 }
 
 export interface DashboardMetricsDto {
+  period: DashboardPeriod;
   pacientes: {
     total: number;
     listaEspera: number;
     protocolo: number;
     regular: number;
     historico: number;
+    novosInscritos: number;
   };
   colaboradores: {
     total: number;
@@ -35,118 +48,189 @@ export interface DashboardMetricsDto {
   bolsistasPorPacientes: BolsistaPacientesDto[];
 }
 
+// ─── Utilitário: calcula a data de início do período ─────────────────────────
+
+function getPeriodStart(period: DashboardPeriod): Date | null {
+  if (period === "total") return null;
+
+  const now = new Date();
+
+  switch (period) {
+    case "mes":
+      return new Date(now.getFullYear(), now.getMonth(), 1);
+    case "trimestre":
+      return new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    case "semestre":
+      return new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    case "ano":
+      return new Date(now.getFullYear(), 0, 1);
+    default:
+      return null;
+  }
+}
+
+// ─── Validação do parâmetro ───────────────────────────────────────────────────
+
+const VALID_PERIODS: DashboardPeriod[] = ["mes", "trimestre", "semestre", "ano", "total"];
+
+export function parsePeriod(raw: unknown): DashboardPeriod {
+  if (typeof raw === "string" && VALID_PERIODS.includes(raw as DashboardPeriod)) {
+    return raw as DashboardPeriod;
+  }
+  return "mes"; // padrão
+}
+
+// ─── Service ──────────────────────────────────────────────────────────────────
+
 export class DashboardService {
-  async getMetrics(): Promise<DashboardMetricsDto> {
+  async getMetrics(period: DashboardPeriod = "mes"): Promise<DashboardMetricsDto> {
+    const periodStart = getPeriodStart(period);
+
+    // Filtro de data reutilizável (undefined = sem filtro de período)
+    const dateFilter = periodStart ? { gte: periodStart } : undefined;
+
     // Executa todas as queries em paralelo para performance máxima
     const [
-      totalPacientes,
       totalListaEspera,
       totalProtocolo,
       totalRegular,
       totalHistorico,
+      novosInscritos,
       colaboradoresCount,
       sessoesGrouped,
       totalRelatorios,
       totalAuditoria,
       bolsistasComPacientes,
     ] = await Promise.all([
-      // Pacientes em atendimento ativo (Protocolo + Regular)
-      // Lista de Espera e Histórico excluídos: não estão em atendimento
-      prisma.protocolo.count().then(async (p) => p + await prisma.regular.count()),
 
-      // Lista de espera
+      // Lista de espera (estado atual — sem filtro de período)
       prisma.listaEspera.count(),
 
-      // Protocolo
+      // Protocolo (estado atual — sem filtro de período)
       prisma.protocolo.count(),
 
-      // Regular
+      // Regular (estado atual — sem filtro de período)
       prisma.regular.count(),
 
-      // Histórico (pacientes desligados)
+      // Histórico (estado atual — sem filtro de período)
       prisma.historico.count(),
 
-      // Colaboradores agrupados por role
+      // Novos pacientes inscritos no período (filtrado)
+      prisma.paciente.count({
+        where: dateFilter
+          ? { data_inscricao: dateFilter, ativo: true }
+          : { ativo: true },
+      }),
+
+      // Colaboradores agrupados por role (estado atual — sem filtro)
       prisma.colaborador.groupBy({
         by: ["role"],
         _count: { idBolsista: true },
+        where: { data_saida: null },
       }),
 
-      // Sessões agrupadas por status
+      // Sessões agrupadas por status — FILTRADAS por período
       prisma.sessao.groupBy({
         by: ["status"],
         _count: { idSessao: true },
+        ...(dateFilter ? { where: { dataSessao: dateFilter } } : {}),
       }),
 
-      // Total de relatórios evolutivos
-      prisma.relatorioEvolutivo.count(),
+      // Total de relatórios evolutivos — FILTRADOS por período
+      prisma.relatorioEvolutivo.count({
+        where: dateFilter ? { data_criacao: dateFilter } : {},
+      }),
 
-      // Total de registros de auditoria
+      // Total de registros de auditoria (sem filtro — dado operacional global)
       prisma.logAuditoria.count(),
 
-      // Pacientes por bolsista (Protocolo + Regular, sem duplicações)
+      // Pacientes por bolsista ativo — com lista de nomes para o accordion
       prisma.colaborador.findMany({
         where: {
           role: Role.BOLSISTA,
-          data_saida: null, // apenas bolsistas ativos (sem data de saída)
+          data_saida: null,
         },
         select: {
           idBolsista: true,
           nome: true,
-          _count: {
+          Protocolo: {
             select: {
-              Protocolo: true,
-              Regular: true,
+              paciente: {
+                select: { idPaciente: true, nome: true },
+              },
+            },
+          },
+          Regular: {
+            select: {
+              paciente: {
+                select: { idPaciente: true, nome: true },
+              },
             },
           },
         },
       }),
     ]);
 
-    // ─── Processar colaboradores ────────────────────────────────────────────
+    // ─── Processar totais de atendimento ativo ───────────────────────────────
+    const totalPacientesAtivos = totalProtocolo + totalRegular;
+
+    // ─── Processar colaboradores ─────────────────────────────────────────────
     const bolsistasCount =
-      colaboradoresCount.find((c) => c.role === Role.BOLSISTA)?._count
-        .idBolsista ?? 0;
+      colaboradoresCount.find((c) => c.role === Role.BOLSISTA)?._count.idBolsista ?? 0;
     const adminsCount =
-      colaboradoresCount.find((c) => c.role === Role.ADMIN)?._count
-        .idBolsista ?? 0;
+      colaboradoresCount.find((c) => c.role === Role.ADMIN)?._count.idBolsista ?? 0;
     const totalColaboradores = bolsistasCount + adminsCount;
 
-    // ─── Processar sessões ──────────────────────────────────────────────────
+    // ─── Processar sessões ───────────────────────────────────────────────────
     const sessaoMap: Record<string, number> = {};
     sessoesGrouped.forEach((s) => {
       sessaoMap[s.status] = s._count.idSessao;
     });
 
-    const sessoesRealizadas = sessaoMap["REALIZADA"] ?? 0;
-    const sessoesCanceladas = sessaoMap["CANCELADA"] ?? 0;
-    const faltasJustificadas = sessaoMap["FALTA_JUSTIFICADA"] ?? 0;
+    const sessoesRealizadas     = sessaoMap["REALIZADA"] ?? 0;
+    const sessoesCanceladas     = sessaoMap["CANCELADA"] ?? 0;
+    const faltasJustificadas    = sessaoMap["FALTA_JUSTIFICADA"] ?? 0;
     const faltasNaoJustificadas = sessaoMap["FALTA_NAO_JUSTIFICADA"] ?? 0;
-    const totalFaltas = faltasJustificadas + faltasNaoJustificadas;
-    const totalSessoes =
-      sessoesRealizadas + sessoesCanceladas + totalFaltas;
+    const totalFaltas           = faltasJustificadas + faltasNaoJustificadas;
+    const totalSessoes          = sessoesRealizadas + sessoesCanceladas + totalFaltas;
 
-    // ─── Processar bolsistas por pacientes ─────────────────────────────────
-    // Conta Protocolo + Regular sem duplicação (são tabelas distintas,
-    // um paciente não pode estar em ambas simultaneamente).
+    // ─── Processar bolsistas por pacientes ───────────────────────────────────
     const bolsistasPorPacientes: BolsistaPacientesDto[] = bolsistasComPacientes
-      .map((b) => ({
-        id: b.idBolsista,
-        nome: b.nome,
-        pacientes: (b._count.Protocolo ?? 0) + (b._count.Regular ?? 0),
-      }))
+      .map((b) => {
+        const listProtocolo: PacienteResumoDto[] = b.Protocolo.map((p) => ({
+          id: p.paciente.idPaciente,
+          nome: p.paciente.nome,
+          tipo: "Protocolo" as const,
+        }));
+        const listRegular: PacienteResumoDto[] = b.Regular.map((p) => ({
+          id: p.paciente.idPaciente,
+          nome: p.paciente.nome,
+          tipo: "Regular" as const,
+        }));
+        const pacientesList = [...listProtocolo, ...listRegular].sort((a, b) =>
+          a.nome.localeCompare(b.nome, "pt-BR")
+        );
+        return {
+          id: b.idBolsista,
+          nome: b.nome,
+          pacientes: pacientesList.length,
+          pacientesList,
+        };
+      })
       .sort((a, b) => {
         if (b.pacientes !== a.pacientes) return b.pacientes - a.pacientes;
         return a.nome.localeCompare(b.nome, "pt-BR");
       });
 
     return {
+      period,
       pacientes: {
-        total: totalPacientes,  // apenas Protocolo + Regular (em atendimento ativo)
+        total: totalPacientesAtivos,
         listaEspera: totalListaEspera,
         protocolo: totalProtocolo,
         regular: totalRegular,
         historico: totalHistorico,
+        novosInscritos,
       },
       colaboradores: {
         total: totalColaboradores,

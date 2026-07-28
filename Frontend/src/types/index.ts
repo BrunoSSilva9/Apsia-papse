@@ -59,19 +59,30 @@ export interface WaitingListCardProps {
 
 // ─── Dashboard ──────────────────────────────────────────────────────────────
 
+export type DashboardPeriod = "mes" | "trimestre" | "semestre" | "ano" | "total";
+
+export interface PacienteResumo {
+  id: number;
+  nome: string;
+  tipo: "Protocolo" | "Regular";
+}
+
 export interface BolsistaPacientes {
   id: number;
   nome: string;
   pacientes: number;
+  pacientesList: PacienteResumo[];
 }
 
 export interface DashboardMetrics {
+  period: DashboardPeriod;
   pacientes: {
     total: number;
     listaEspera: number;
     protocolo: number;
     regular: number;
     historico: number;
+    novosInscritos: number;
   };
   colaboradores: {
     total: number;
