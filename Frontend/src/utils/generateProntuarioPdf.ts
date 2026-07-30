@@ -438,6 +438,21 @@ export const generateProntuarioPdf = (prontuario: any): void => {
     ["Responsavel Atual", bolsistaAtual || "-", "", ""],
   ]);
 
+  if (paciente?.relato) {
+    ensureSpace(15);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...C.secondary);
+    doc.text("Motivo da Busca / Relato Inicial:", M, y);
+    y += 5;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...C.black);
+    drawWrappedText(paciente.relato, M, CW, 5);
+    y += 5;
+  }
+
   // ─── SEÇÃO 2: RESUMO ────────────────────────────────────────────────────
   drawSectionTitle("2. RESUMO DO ACOMPANHAMENTO");
 

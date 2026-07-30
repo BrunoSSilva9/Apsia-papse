@@ -17,6 +17,7 @@ export const getProntuarioCompletoService = async (idPaciente: number) => {
           data_nascimento: true,
           data_inscricao: true,
           ativo: true,
+          relato: true, // campo necessário para exibição no prontuário e no PDF
         },
       }),
 
