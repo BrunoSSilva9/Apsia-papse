@@ -1,10 +1,11 @@
-import { type Request, type Response } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import { ColaboradorService } from "../services/colaborador.service.js";
+import { AppError } from "../errors/AppError.js";
 
 export class ColaboradorController {
   private colaboradorService = new ColaboradorService();
 
-  public create = async (req: Request, res: Response) => {
+  public create = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { nome, matricula, email, senha, role, data_admissao } = req.body;
 
@@ -22,83 +23,89 @@ export class ColaboradorController {
         role,
         data_admissao: dataFormatada,
       });
-      res.status(201).json(novoColaborador);
+      res.status(201).json({
+        success: true,
+        data: novoColaborador,
+        message: "Colaborador criado com sucesso."
+      });
     } catch (error: any) {
-      res.status(500).json({ message: error.message });
+      if (error.message.includes("já está cadastrada") || error.message.includes("já está cadastrado")) {
+        return next(new AppError(error.message, 409));
+      }
+      next(error);
     }
   };
 
-  public findAll = async (req: Request, res: Response) => {
+  public findAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const colaboradores = await this.colaboradorService.findAll();
       res.status(200).json(colaboradores);
     } catch (error: any) {
-      res.status(500).json({ message: error.message });
+      next(error);
     }
   };
 
-  public findOne = async (req: Request, res: Response) => {
-    const { id } = req.params;
-
-    if (!id) {
-      return res
-        .status(400)
-        .json({ message: "O ID do colaborador é obrigatório." });
-    }
-
+  public findOne = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const { id } = req.params;
       const colaborador = await this.colaboradorService.findOne(
-        parseInt(id, 10),
+        parseInt(id as string, 10),
       );
       res.status(200).json(colaborador);
     } catch (error: any) {
       if (error.message === "Colaborador não encontrado.") {
-        return res.status(404).json({ message: error.message });
+        return next(new AppError(error.message, 404));
       }
-      res.status(500).json({ message: error.message });
+      next(error);
     }
   };
 
-  public update = async (req: Request, res: Response) => {
-    const { id } = req.params;
-
-    if (!id) {
-      return res
-        .status(400)
-        .json({ message: "O ID do colaborador é obrigatório." });
-    }
-
+  public update = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const { id } = req.params;
       const colaboradorAtualizado = await this.colaboradorService.update(
-        parseInt(id, 10),
+        parseInt(id as string, 10),
         req.body,
       );
-      res.status(200).json(colaboradorAtualizado);
+      res.status(200).json({
+        success: true,
+        data: colaboradorAtualizado,
+        message: "Colaborador atualizado com sucesso."
+      });
     } catch (error: any) {
       if (error.message.includes("Colaborador não encontrado")) {
-        return res.status(404).json({ message: error.message });
+        return next(new AppError(error.message, 404));
       }
-      res.status(500).json({ message: error.message });
+      if (error.message.includes("já está sendo utilizada") || error.message.includes("já está sendo utilizado")) {
+        return next(new AppError(error.message, 409));
+      }
+      next(error);
     }
   };
 
-  public delete = async (req: Request, res: Response) => {
-    const { id } = req.params;
-
-    if (!id) {
-      return res
-        .status(400)
-        .json({ message: "O ID do colaborador é obrigatório." });
-    }
-
+  public delete = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await this.colaboradorService.delete(parseInt(id, 10));
+      const { id } = req.params;
+
+      const ipValue = req.ip || req.socket.remoteAddress;
+      const reqUser = req.user
+        ? {
+            id: req.user.id,
+            role: req.user.role as any,
+            ...(ipValue ? { ip: ipValue } : {}),
+          }
+        : undefined;
+
+      await this.colaboradorService.delete(parseInt(id as string, 10), reqUser);
       res.status(204).send();
     } catch (error: any) {
       if (error.message === "Colaborador não encontrado.") {
-        return res.status(404).json({ message: error.message });
+        return next(new AppError(error.message, 404));
       }
-      res.status(500).json({ message: error.message });
+      if (error.message.includes("ainda possui pacientes ativos")) {
+        return next(new AppError(error.message, 400));
+      }
+      next(error);
     }
   };
 }

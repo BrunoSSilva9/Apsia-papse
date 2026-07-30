@@ -12,9 +12,9 @@ export interface CreateListaRegularDto {
 }
 
 export class ListaRegularService {
-  async create(data: CreateListaRegularDto) {
+  async create(data: CreateListaRegularDto, reqUser?: { id: number; role: string; ip?: string }) {
     try {
-      return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const resultado = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         const pacienteEmEspera = await tx.listaEspera.findFirst({
           where: { idPaciente: data.idPaciente },
         });
@@ -26,6 +26,14 @@ export class ListaRegularService {
         await tx.colaborador.findUniqueOrThrow({
           where: { idBolsista: data.idBolsista },
         });
+
+        // Anti-duplicata: verificar se já está na ListaRegular
+        const jaExiste = await tx.listaRegular.findFirst({
+          where: { idPaciente: data.idPaciente },
+        });
+        if (jaExiste) {
+          throw new Error("Paciente já está na lista regular.");
+        }
 
         const novoRegistro = await tx.listaRegular.create({
           data: {
@@ -40,6 +48,22 @@ export class ListaRegularService {
 
         return novoRegistro;
       });
+
+      if (reqUser) {
+        const { AuditService } = await import("./audit.service.js");
+        const audit = new AuditService();
+        await audit.log({
+          idBolsista: reqUser.id,
+          role: reqUser.role as any,
+          acao: "CRIAR_LISTA_REGULAR",
+          entidade: "ListaRegular",
+          entidadeId: resultado.idListaRegular,
+          pacienteId: data.idPaciente,
+          ...(reqUser.ip ? { ip_origem: reqUser.ip } : {}),
+        });
+      }
+
+      return resultado;
     } catch (error: any) {
       if (error.code === "P2025") {
         console.error(
@@ -115,7 +139,7 @@ export class ListaRegularService {
     }
   }
 
-  async delete(id: number) {
+  async delete(id: number, reqUser?: { id: number; role: string; ip?: string }) {
     try {
       const listaRegularParaArquivar =
         await prisma.listaRegular.findUniqueOrThrow({
@@ -135,6 +159,20 @@ export class ListaRegularService {
           },
         });
       });
+
+      if (reqUser) {
+        const { AuditService } = await import("./audit.service.js");
+        const audit = new AuditService();
+        await audit.log({
+          idBolsista: reqUser.id,
+          role: reqUser.role as any,
+          acao: "ARQUIVAR_LISTA_REGULAR",
+          entidade: "ListaRegular",
+          entidadeId: id,
+          pacienteId: listaRegularParaArquivar.idPaciente,
+          ...(reqUser.ip ? { ip_origem: reqUser.ip } : {}),
+        });
+      }
     } catch (error: any) {
       if (error.code === "P2025" || error.message.includes("não encontrado")) {
         throw new Error("Registro na lista regular não encontrado.");

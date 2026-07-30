@@ -4,8 +4,13 @@ import axios, {
   type AxiosRequestHeaders,
 } from "axios";
 
+import { toast } from "react-toastify";
+
 const baseURL =
-  import.meta.env.VITE_API_URL || "https://api.projetopapse.org/api";
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV
+    ? "http://localhost:3000/api"
+    : "https://api.projetopapse.org/api");
 
 const api = axios.create({
   baseURL,
@@ -20,6 +25,48 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      const { status, data } = error.response;
+      
+      const message = data?.message || "Erro na comunicação com o servidor.";
+
+      switch (status) {
+        case 400:
+          if (data?.errors && Array.isArray(data.errors)) {
+            data.errors.forEach((err: any) => toast.error(err.message || "Erro de validação"));
+          } else {
+            toast.error(message);
+          }
+          break;
+        case 401:
+          toast.error("Sessão expirada. Por favor, faça login novamente.");
+          localStorage.removeItem("@Papse:token");
+          localStorage.removeItem("@Papse:user");
+          window.location.href = "/login";
+          break;
+        case 403:
+          toast.warning(message || "Acesso negado.");
+          break;
+        case 429:
+          toast.warning("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
+          break;
+        case 500:
+          toast.error("Erro interno do servidor. Tente novamente mais tarde.");
+          break;
+        default:
+          toast.error(message);
+          break;
+      }
+    } else {
+      toast.error("Erro de conexão. Verifique sua internet.");
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const fetchInscricoes = (status: string | null = null) => {
   if (status === "lista_de_espera") return getListaEspera();
@@ -73,5 +120,15 @@ export const deleteHistorico = (id: number) => api.delete(`/historico/${id}`);
 export const createRelatorio = (data: any) => api.post("/relatorios", data);
 export const getRelatoriosPorPaciente = (idPaciente: number) =>
   api.get(`/relatorios/${idPaciente}`);
+
+export const createSessao = (data: any) => api.post("/sessoes", data);
+export const getSessoesByPaciente = (idPaciente: number) =>
+  api.get(`/sessoes/${idPaciente}`);
+
+export const getProntuario = (idPaciente: number) =>
+  api.get(`/prontuario/${idPaciente}`);
+
+export const getDashboardMetrics = (period?: string) =>
+  api.get("/dashboard/metrics", { params: period ? { period } : {} });
 
 export default api;

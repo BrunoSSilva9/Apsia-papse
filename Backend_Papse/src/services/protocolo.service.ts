@@ -9,12 +9,13 @@ export interface CreateProtocoloDto {
 }
 
 export interface UpdateProtocoloDto {
+  idBolsista?: number;
   data_inicio_atendimento?: string;
   qtde_sessoes?: number;
 }
 
 export class ProtocoloService {
-  public async create(data: CreateProtocoloDto) {
+  public async create(data: CreateProtocoloDto, reqUser?: { id: number; role: string; ip?: string }) {
     try {
       const protocolo = await prisma.$transaction(
         async (tx: Prisma.TransactionClient) => {
@@ -24,6 +25,19 @@ export class ProtocoloService {
 
           await tx.colaborador.findUniqueOrThrow({
             where: { idBolsista: data.idBolsista },
+          });
+
+          // Anti-duplicata: verificar se já tem protocolo ativo
+          const jaExiste = await tx.protocolo.findFirst({
+            where: { idPaciente: data.idPaciente },
+          });
+          if (jaExiste) {
+            throw new Error("Paciente já tem um protocolo ativo.");
+          }
+
+          // Remover da lista de espera se estiver lá
+          await tx.listaEspera.deleteMany({
+            where: { idPaciente: data.idPaciente },
           });
 
           const novoProtocolo = await tx.protocolo.create({
@@ -37,6 +51,20 @@ export class ProtocoloService {
           return novoProtocolo;
         }
       );
+
+      if (reqUser) {
+        const { AuditService } = await import("./audit.service.js");
+        const audit = new AuditService();
+        await audit.log({
+          idBolsista: reqUser.id,
+          role: reqUser.role as any,
+          acao: "CRIAR_PROTOCOLO",
+          entidade: "Protocolo",
+          entidadeId: protocolo.idProtocolo,
+          pacienteId: data.idPaciente,
+          ...(reqUser.ip ? { ip_origem: reqUser.ip } : {}),
+        });
+      }
 
       return protocolo;
     } catch (error: any) {
@@ -103,7 +131,7 @@ export class ProtocoloService {
     }
   }
 
-  async delete(id: number) {
+  async delete(id: number, reqUser?: { id: number; role: string; ip?: string }) {
     try {
       const protocoloParaArquivar = await prisma.protocolo.findUniqueOrThrow({
         where: { idProtocolo: id },
@@ -122,6 +150,20 @@ export class ProtocoloService {
           },
         });
       });
+
+      if (reqUser) {
+        const { AuditService } = await import("./audit.service.js");
+        const audit = new AuditService();
+        await audit.log({
+          idBolsista: reqUser.id,
+          role: reqUser.role as any,
+          acao: "ARQUIVAR_PROTOCOLO",
+          entidade: "Protocolo",
+          entidadeId: id,
+          pacienteId: protocoloParaArquivar.idPaciente,
+          ...(reqUser.ip ? { ip_origem: reqUser.ip } : {}),
+        });
+      }
     } catch (error: any) {
       if (error.code === "P2025" || error.message.includes("não encontrado")) {
         throw new Error("Registro de protocolo não encontrado.");

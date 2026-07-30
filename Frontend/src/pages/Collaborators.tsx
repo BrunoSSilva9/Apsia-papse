@@ -5,11 +5,11 @@ import {
   createColaborador,
   deleteColaborador,
 } from "../services/api";
+import { unwrapApiResponse } from "../utils/apiResponse";
 import {
   User,
   Shield,
   School,
-  Trash2,
   Plus,
   X,
   Calendar,
@@ -18,7 +18,9 @@ import {
   AlertCircle,
   Mail,
   Archive,
+  UserX,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 interface Colaborador {
   idBolsista: number;
@@ -67,7 +69,8 @@ const Collaborators = () => {
     try {
       setLoading(true);
       const response = await getBolsistas();
-      setCollaborators(response.data);
+      const unwrapped = unwrapApiResponse<any[]>(response.data);
+      setCollaborators(unwrapped);
     } catch (error) {
       console.error("Erro ao carregar colaboradores:", error);
     } finally {
@@ -167,14 +170,13 @@ const Collaborators = () => {
     setDeleting(true);
     try {
       await deleteColaborador(collaboratorToDelete.idBolsista);
-      setSuccessMessage("Colaborador inativado com sucesso!");
+      toast.success("Colaborador inativado com sucesso!");
       await loadCollaborators();
-      setTimeout(() => setShowDeleteModal(false), 1000);
+      setShowDeleteModal(false);
     } catch (error: any) {
       const msgErro =
-        error.response?.data?.message ||
-        "Erro ao processar a exclusão do colaborador.";
-      alert(msgErro);
+        error.response?.data?.message || "Não foi possível inativar o colaborador. Tente novamente.";
+      toast.error(msgErro);
     } finally {
       setDeleting(false);
     }
@@ -514,7 +516,7 @@ const Collaborators = () => {
               <AlertTriangle size={32} />
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">
-              Excluir Colaborador?
+              Inativar Colaborador?
             </h3>
             <p className="text-gray-600 mb-6">
               Você está prestes a inativar{" "}
@@ -620,7 +622,7 @@ const CollaboratorCard = ({
             onClick={onDelete}
             className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors flex items-center gap-1 text-sm group-hover:opacity-100 opacity-60"
           >
-            <Trash2 size={16} /> Inativar
+            <UserX size={16} /> Inativar
           </button>
         </div>
       )}

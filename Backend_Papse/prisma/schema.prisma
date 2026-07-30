@@ -13,6 +13,20 @@ enum Role {
   BOLSISTA
 }
 
+enum StatusSessao {
+  REALIZADA
+  FALTA_JUSTIFICADA
+  FALTA_NAO_JUSTIFICADA
+  CANCELADA
+}
+
+enum ModalidadeSessao {
+  PRESENCIAL
+  ONLINE
+  TELEFONE
+  OUTRO
+}
+
 
 model Paciente {
   idPaciente      Int       @id @default(autoincrement())
@@ -27,6 +41,8 @@ model Paciente {
   termo_lgpd Boolean @default(false)
   data_aceite_termo DateTime?
   ip_origem String? @db.VarChar(45)
+  ativo Boolean @default(true)
+  deletedAt DateTime?
 
   // Relações: Um paciente pode estar em várias listas/históricos
   ListaEspera ListaEspera[]
@@ -35,6 +51,7 @@ model Paciente {
   Regular     Regular[]
   Historico   Historico[]
   Relatorios  RelatorioEvolutivo[]
+  Sessoes     Sessao[]
 }
 
 model Colaborador {
@@ -55,6 +72,7 @@ model Colaborador {
   Regular      Regular[]
   Historico    Historico[]
   Relatorios   RelatorioEvolutivo[]
+  Sessoes      Sessao[]
 }
 
 model ListaEspera {
@@ -62,7 +80,7 @@ model ListaEspera {
   
   // Relação com Paciente
   idPaciente    Int
-  paciente      Paciente @relation(fields: [idPaciente], references: [idPaciente], onDelete: Cascade)
+  paciente      Paciente @relation(fields: [idPaciente], references: [idPaciente])
 }
 
 model ListaRegular {
@@ -70,7 +88,7 @@ model ListaRegular {
 
   // Relação com Paciente
   idPaciente     Int
-  paciente       Paciente @relation(fields: [idPaciente], references: [idPaciente], onDelete: Cascade)
+  paciente       Paciente @relation(fields: [idPaciente], references: [idPaciente])
 
   // Relação com Colaborador
   idBolsista     Int
@@ -84,7 +102,7 @@ model Protocolo {
 
   // Relação com Paciente
   idPaciente              Int
-  paciente                Paciente @relation(fields: [idPaciente], references: [idPaciente], onDelete: Cascade)
+  paciente                Paciente @relation(fields: [idPaciente], references: [idPaciente])
   
   // Relação com Colaborador
   idBolsista              Int
@@ -98,7 +116,7 @@ model Regular {
 
   // Relação com Paciente
   idPaciente              Int
-  paciente                Paciente @relation(fields: [idPaciente], references: [idPaciente], onDelete: Cascade)
+  paciente                Paciente @relation(fields: [idPaciente], references: [idPaciente])
   
   // Relação com Colaborador
   idBolsista              Int
@@ -111,7 +129,7 @@ model Historico {
 
   // Relação com Paciente
   idPaciente        Int
-  paciente          Paciente  @relation(fields: [idPaciente], references: [idPaciente], onDelete: Cascade)
+  paciente          Paciente  @relation(fields: [idPaciente], references: [idPaciente])
   
   // Relação com Colaborador (último bolsista)
   id_ultimo_bolsista Int
@@ -123,11 +141,49 @@ model RelatorioEvolutivo {
   texto           String   @db.Text 
   data_criacao    DateTime @default(now())
 
+  // Relação com Sessao (nullable para compatibilidade com relatórios legados)
+  idSessao        Int?     @unique
+  sessao          Sessao?  @relation(fields: [idSessao], references: [idSessao])
+
   // Relação com Paciente
   idPaciente      Int
-  paciente        Paciente @relation(fields: [idPaciente], references: [idPaciente], onDelete: Cascade)
+  paciente        Paciente @relation(fields: [idPaciente], references: [idPaciente])
 
   // Relação com Colaborador (quem escreveu)
   idBolsista      Int
   colaborador     Colaborador @relation(fields: [idBolsista], references: [idBolsista], onDelete: Restrict)
+}
+
+model Sessao {
+  idSessao    Int               @id @default(autoincrement())
+  dataSessao  DateTime          @db.Date
+  status      StatusSessao
+  modalidade  ModalidadeSessao  @default(PRESENCIAL)
+  duracao     Int?
+  observacao  String?           @db.VarChar(500)
+  data_criacao DateTime         @default(now())
+
+  // Relação com Paciente
+  idPaciente  Int
+  paciente    Paciente    @relation(fields: [idPaciente], references: [idPaciente])
+
+  // Relação com Colaborador
+  idBolsista  Int
+  colaborador Colaborador @relation(fields: [idBolsista], references: [idBolsista], onDelete: Restrict)
+
+  // Relação com Relatório (1:1 opcional — só existe quando status == REALIZADA)
+  relatorio   RelatorioEvolutivo?
+}
+
+model LogAuditoria {
+  idLog        Int      @id @default(autoincrement())
+  idBolsista   Int?     // Referência opcional caso quem fez a ação foi o paciente ou o sistema
+  role         Role?    // Apenas para registrar com qual role a ação foi feita (se aplicável)
+  acao         String   @db.VarChar(100) // Ex: "CRIOU_RELATORIO", "INATIVOU_PACIENTE"
+  entidade     String   @db.VarChar(100) // Ex: "RelatorioEvolutivo", "Paciente"
+  entidadeId   Int?     // ID do registro que foi afetado
+  pacienteId   Int?     // ID do paciente envolvido, para facilitar busca por prontuário
+  data_hora    DateTime @default(now())
+  ip_origem    String?  @db.VarChar(45)
+  user_agent   String?  @db.VarChar(255)
 }

@@ -1,0 +1,68 @@
+# ============================================================
+# PAPSE — Docker Compose Unificado (Raiz do Projeto)
+# Comando para subir tudo: docker compose up -d --build
+# ============================================================
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - papse_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  app:
+    container_name: api-papse
+    build:
+      context: ./Backend_Papse
+    env_file:
+      - .env
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - papse_network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    container_name: frontend-papse
+    build:
+      context: ./Frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - papse_network
+
+networks:
+  papse_network:
+    driver: bridge
+
+volumes:
+  mysql_data:

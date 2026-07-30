@@ -21,8 +21,12 @@ RUN npx prisma generate
 #RUN npm run build
 RUN npx tsc --skipLibCheck || true
 
-# 7. Expor a porta da aplicação
+# 7. Copiar e configurar o entrypoint
+COPY entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
+
+# 8. Expor a porta da aplicação
 EXPOSE 3000
 
-# 8. Comando padrão para iniciar o container em modo de desenvolvimento
-CMD [ "npm", "run", "dev" ]
+# 9. Entrypoint: aplica migrations, seed e inicia o servidor
+CMD [ "sh", "./entrypoint.sh" ]

@@ -50,7 +50,16 @@ export class PacienteService {
 
   async findAll() {
     try {
-      const pacientes = await prisma.paciente.findMany();
+      const pacientes = await prisma.paciente.findMany({
+        where: { ativo: true },
+        select: {
+          idPaciente: true,
+          nome: true,
+          matricula: true,
+          data_inscricao: true,
+          ativo: true,
+        }
+      });
       return pacientes;
     } catch (error) {
       console.error("Erro ao buscar pacientes:", error);
@@ -58,16 +67,29 @@ export class PacienteService {
     }
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, reqUser?: { id: number; role: string; ip?: string }) {
     try {
       const paciente = await prisma.paciente.findUniqueOrThrow({
-        where: { idPaciente: id },
+        where: { idPaciente: id, ativo: true },
       });
+
+      if (reqUser) {
+        const { AuditService } = await import("./audit.service.js");
+        const audit = new AuditService();
+        await audit.log({
+          idBolsista: reqUser.id,
+          role: reqUser.role as any,
+          acao: "VISUALIZAR_PACIENTE",
+          entidade: "Paciente",
+          entidadeId: id,
+          pacienteId: id,
+          ...(reqUser.ip ? { ip_origem: reqUser.ip } : {}),
+        });
+      }
 
       return paciente;
     } catch (error) {
       console.error(`Erro ao buscar paciente com ID ${id}:`, error);
-
       throw new Error("Paciente não encontrado.");
     }
   }
@@ -95,11 +117,64 @@ export class PacienteService {
     }
   }
 
-  async delete(id: number) {
+  async delete(id: number, reqUser?: { id: number; role: string; ip?: string }) {
     try {
-      await prisma.paciente.delete({
-        where: { idPaciente: id },
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        // 1. Inativa o paciente (soft delete)
+        await tx.paciente.update({
+          where: { idPaciente: id },
+          data: {
+            ativo: false,
+            deletedAt: new Date(),
+          },
+        });
+
+        // 2. Remove da lista de espera (não tem vínculo com bolsista)
+        await tx.listaEspera.deleteMany({
+          where: { idPaciente: id },
+        });
+
+        // 3. Remove da lista regular e gera histórico
+        const emListaRegular = await tx.listaRegular.findMany({ where: { idPaciente: id } });
+        for (const lr of emListaRegular) {
+          await tx.listaRegular.delete({ where: { idListaRegular: lr.idListaRegular } });
+          await tx.historico.create({
+            data: { idPaciente: id, id_ultimo_bolsista: lr.idBolsista, data_desligamento: new Date() }
+          });
+        }
+
+        // 4. Remove de protocolo e gera histórico
+        const emProtocolo = await tx.protocolo.findMany({ where: { idPaciente: id } });
+        for (const p of emProtocolo) {
+          await tx.protocolo.delete({ where: { idProtocolo: p.idProtocolo } });
+          await tx.historico.create({
+            data: { idPaciente: id, id_ultimo_bolsista: p.idBolsista, data_desligamento: new Date() }
+          });
+        }
+
+        // 5. Remove de regular e gera histórico
+        const emRegular = await tx.regular.findMany({ where: { idPaciente: id } });
+        for (const r of emRegular) {
+          await tx.regular.delete({ where: { idRegular: r.idRegular } });
+          await tx.historico.create({
+            data: { idPaciente: id, id_ultimo_bolsista: r.idBolsista, data_desligamento: new Date() }
+          });
+        }
       });
+
+      if (reqUser) {
+        const { AuditService } = await import("./audit.service.js");
+        const audit = new AuditService();
+        await audit.log({
+          idBolsista: reqUser.id,
+          role: reqUser.role as any,
+          acao: "INATIVAR_PACIENTE",
+          entidade: "Paciente",
+          entidadeId: id,
+          pacienteId: id,
+          ...(reqUser.ip ? { ip_origem: reqUser.ip } : {}),
+        });
+      }
     } catch (error) {
       console.error(`Erro ao deletar paciente com ID ${id}:`, error);
       throw new Error("Paciente não encontrado.");

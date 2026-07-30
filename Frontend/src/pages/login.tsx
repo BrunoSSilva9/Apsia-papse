@@ -3,7 +3,9 @@ import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import { toast } from "react-toastify";
 import HeaderMenu from "../components/shared/HeaderMenu";
+import Footer from "../components/shared/Footer";
 import imgLogin from "../assets/images/img-login.svg";
 
 interface LoginFormInputs {
@@ -21,8 +23,9 @@ const Login = () => {
 
   const onSubmit = async (data: LoginFormInputs) => {
     try {
+      setIsSubmitting(true);
       if (!executeRecaptcha) {
-        alert("Erro de segurança: reCAPTCHA não carregado.");
+        toast.error("Não foi possível validar a segurança do formulário. Atualize a página e tente novamente.");
         setIsSubmitting(false);
         return;
       }
@@ -41,7 +44,7 @@ const Login = () => {
         }
       }
     } catch {
-      alert("Falha no login. Verifique seu email e senha ou tente novamente.");
+      toast.error("Não foi possível realizar o login. Verifique seu e-mail e senha e tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -158,10 +161,15 @@ const Login = () => {
           <img
             src={imgLogin}
             alt="Ilustração de login"
-            className="max-w-[250px] h-auto"
+            className="max-w-[250px] h-auto mb-8"
           />
         </div>
+
       </section>
+
+      <div className="absolute bottom-0 left-0 w-full bg-[#2B468B]/95 lg:bg-[#2B468B]/90 backdrop-blur-sm z-10 border-t border-white/10">
+        <Footer />
+      </div>
     </div>
   );
 };

@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Search, Info, ChevronRight, Send, X, User } from "lucide-react";
+import { toast } from "react-toastify";
+import { unwrapApiResponse } from "../utils/apiResponse";
+import { Search, Info, ChevronRight, Send, X, User, FileText, Clock, CalendarDays, CheckCircle2, XCircle } from "lucide-react";
 import {
   fetchInscricoes,
   createProtocolo,
@@ -19,6 +21,8 @@ import {
   getHistorico,
   deleteHistorico,
   createRelatorio,
+  getSessoesByPaciente,
+  getRelatoriosPorPaciente,
 } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import PatientCard from "../components/shared/PatientCard";
@@ -72,13 +76,18 @@ const PatientList = ({
   const [reportText, setReportText] = useState("");
   const [reportPatient, setReportPatient] = useState<any>(null);
   const [reportLoading, setReportLoading] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const [pastSessoes, setPastSessoes] = useState<any[]>([]);
+  const [loadingPastSessoes, setLoadingPastSessoes] = useState(false);
 
   const { user } = useAuth();
 
   const loadBolsistas = useCallback(async () => {
     try {
       const response = await getBolsistas();
-      const filtered = response.data.filter(
+      const unwrappedData = unwrapApiResponse<any[]>(response.data);
+      const filtered = unwrappedData.filter(
         (b: any) => b.role?.toUpperCase() === "BOLSISTA" && !b.data_saida,
       );
       setBolsistas(filtered);
@@ -91,7 +100,8 @@ const PatientList = ({
     setLoading(true);
     try {
       const response = await fetchInscricoes(status);
-      const mapped = response.data.map((item: any) => {
+      const unwrappedData = unwrapApiResponse<any[]>(response.data);
+      const mapped = unwrappedData.map((item: any) => {
         if (!item.paciente) return { ...item, motivo: item.relato };
 
         let relationId;
@@ -140,7 +150,8 @@ const PatientList = ({
   const removePatientFromHistory = async (patientId: number) => {
     try {
       const response = await getHistorico();
-      const records = response.data.filter(
+      const unwrappedData = unwrapApiResponse<any[]>(response.data);
+      const records = unwrappedData.filter(
         (h: any) =>
           h.idPaciente === patientId ||
           (h.paciente && h.paciente.idPaciente === patientId),
@@ -159,11 +170,16 @@ const PatientList = ({
     targetStatus: string,
     assignedBolsistaId: string | null = null,
   ) => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
     const bolsistaId = assignedBolsistaId
       ? parseInt(String(assignedBolsistaId))
       : user?.idBolsista;
     const patientId = patient.idPaciente || patient.id;
-    if (!bolsistaId) return alert("Erro: Bolsista não identificado.");
+    if (!bolsistaId) {
+      setIsTransitioning(false);
+      return toast.error("Erro: Bolsista não identificado.");
+    }
 
     try {
       if (status === targetStatus) {
@@ -175,7 +191,7 @@ const PatientList = ({
         else if (status === "espera_regulares")
           await updateListaRegular(patient.relationId, payload);
         loadPatients();
-        alert("Bolsista atualizado com sucesso!");
+        toast.success("Bolsista atualizado com sucesso!");
         return;
       }
       if (targetStatus === "lista_de_espera") {
@@ -189,48 +205,50 @@ const PatientList = ({
           data_inicio_atendimento: new Date().toISOString(),
           qtde_sessoes: 0,
         });
-        await deleteCurrent(patient);
+        // O service já remove da ListaEspera internamente
+        if (status !== "lista_de_espera") await deleteCurrent(patient);
         await removePatientFromHistory(patientId);
       } else if (targetStatus === "espera_regulares") {
-        if (status === "lista_de_espera")
+        // Mover direto da ListaEspera (o service remove a LE internamente)
+        if (status === "lista_de_espera") {
           await createListaRegular({
             idPaciente: patientId,
             idBolsista: bolsistaId,
           });
-        else {
+        } else {
+          // De qualquer outra lista: deletar atual, adicionar à LE, depois mover para LR
+          await deleteCurrent(patient);
           await createListaEspera({ idPaciente: patientId });
           await createListaRegular({
             idPaciente: patientId,
             idBolsista: bolsistaId,
           });
-          await deleteCurrent(patient);
           await removePatientFromHistory(patientId);
         }
       } else if (targetStatus === "atendimento_regular") {
-        if (status === "lista_de_espera" || status === "espera_regulares")
-          await createRegular({
-            idPaciente: patientId,
-            idBolsista: bolsistaId,
-            data_inicio_atendimento: new Date().toISOString(),
-            qtde_sessoes: 0,
-          });
-        else {
-          await createListaEspera({ idPaciente: patientId });
-          await createRegular({
-            idPaciente: patientId,
-            idBolsista: bolsistaId,
-            data_inicio_atendimento: new Date().toISOString(),
-            qtde_sessoes: 0,
-          });
-          await deleteCurrent(patient);
-          await removePatientFromHistory(patientId);
-        }
+        // O service do Regular aceita LE, ListaRegular e Protocolo como fonte
+        await createRegular({
+          idPaciente: patientId,
+          idBolsista: bolsistaId,
+          data_inicio_atendimento: new Date().toISOString(),
+          qtde_sessoes: 0,
+        });
+        // O service já remove da lista anterior internamente
+        await removePatientFromHistory(patientId);
       }
       setPatients(patients.filter((p) => (p.idPaciente || p.id) !== patientId));
-      alert("Movimentação realizada com sucesso!");
-    } catch (error) {
+      toast.success("Movimentação realizada com sucesso!");
+    } catch (error: any) {
       console.error(error);
-      alert("Erro ao realizar a ação.");
+      const status_code = error?.response?.status;
+      if (status_code === 409) {
+        toast.warning("O paciente já está nessa lista ou estado. Recarregando...");
+        loadPatients();
+      } else {
+        toast.error("Erro ao realizar a ação.");
+      }
+    } finally {
+      setIsTransitioning(false);
     }
   };
 
@@ -264,7 +282,7 @@ const PatientList = ({
   };
 
   const handleEncerrar = async (patient: any) => {
-    if (confirm("Tem certeza que deseja encerrar a inscrição?")) {
+    if (confirm("Tem certeza que deseja inativar o paciente?")) {
       try {
         await deleteCurrent(patient);
         setPatients(
@@ -273,24 +291,65 @@ const PatientList = ({
               (p.idPaciente || p.id) !== (patient.idPaciente || patient.id),
           ),
         );
-        alert("Inscrição encerrada com sucesso.");
+        toast.success("Paciente inativado com sucesso.");
       } catch (error) {
-        console.error("Erro ao encerrar:", error);
-        alert("Erro ao encerrar a inscrição.");
+        console.error("Erro ao inativar:", error);
+        toast.error("Erro ao inativar o paciente.");
       }
+    }
+  };
+
+  const loadPastSessoes = async (patientId: number) => {
+    setLoadingPastSessoes(true);
+    try {
+      const [sessoesRes, relatoriosRes] = await Promise.all([
+        getSessoesByPaciente(patientId),
+        getRelatoriosPorPaciente(patientId)
+      ]);
+      const sessoes = unwrapApiResponse<any[]>(sessoesRes.data) || [];
+      const relatorios = unwrapApiResponse<any[]>(relatoriosRes.data) || [];
+
+      const relatoriosAvulsos = relatorios
+        .filter((r) => !r.idSessao)
+        .map((r) => ({
+          idSessao: `rel_${r.idRelatorio}`,
+          dataSessao: r.data_criacao,
+          status: "RELATORIO_AVULSO",
+          modalidade: "OUTRO",
+          observacao: null,
+          relatorio: { texto: r.texto },
+          colaborador: r.colaborador,
+        }));
+
+      const merged = [...sessoes, ...relatoriosAvulsos].sort(
+        (a, b) => new Date(b.dataSessao).getTime() - new Date(a.dataSessao).getTime()
+      );
+
+      setPastSessoes(merged);
+    } catch (error) {
+      console.error("Erro ao carregar sessoes anteriores:", error);
+      setPastSessoes([]);
+    } finally {
+      setLoadingPastSessoes(false);
     }
   };
 
   const handleOpenReportModal = (patient: any) => {
     setReportPatient(patient);
     setReportText("");
+    setPastSessoes([]);
     setShowReportModal(true);
+
+    const patientId = patient.idPaciente || patient.id;
+    if (patientId) {
+      loadPastSessoes(patientId);
+    }
   };
 
   const handleSubmitReport = async () => {
     if (!reportText.trim())
-      return alert("O texto do relatório não pode estar vazio.");
-    if (!user?.idBolsista) return alert("Erro: Usuário não identificado.");
+      return toast.error("O texto do relatório não pode estar vazio.");
+    if (!user?.idBolsista) return toast.error("Erro: Usuário não identificado.");
 
     setReportLoading(true);
     try {
@@ -299,11 +358,11 @@ const PatientList = ({
         idBolsista: user.idBolsista,
         texto: reportText,
       });
-      alert("Relatório salvo com sucesso!");
+      toast.success("Relatório salvo com sucesso!");
       setShowReportModal(false);
     } catch (error) {
       console.error("Erro ao salvar relatório:", error);
-      alert("Erro ao salvar o relatório.");
+      toast.error("Erro ao salvar o relatório.");
     } finally {
       setReportLoading(false);
     }
@@ -321,7 +380,7 @@ const PatientList = ({
     <div className="w-full font-nunito">
       {/* Breadcrumbs */}
       <div className="flex items-center text-sm text-gray-500 mb-6">
-        <span className="font-bold text-blue-900 text-lg">PAPSE</span>
+        <span className="font-bold text-blue-900 text-lg">APSIA</span>
         <span className="mx-2 text-gray-300">|</span>
         <Link to="/admin" className="hover:text-blue-700">
           Painel Administrativo
@@ -438,7 +497,8 @@ const PatientList = ({
               </button>
               <button
                 onClick={confirmBolsistaSelection}
-                className={`px-4 py-2 text-white rounded font-medium transition-colors ${theme.bg} hover:opacity-90`}
+                disabled={isTransitioning || !selectedBolsista}
+                className={`px-4 py-2 text-white rounded font-medium transition-colors ${theme.bg} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 Confirmar
               </button>
@@ -449,8 +509,8 @@ const PatientList = ({
 
       {showReportModal && reportPatient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[999] backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-fade-in">
-            <div className="px-6 py-5 bg-white border-b border-gray-100 flex justify-between items-start">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+            <div className="px-6 py-5 bg-white border-b border-gray-100 flex justify-between items-start shrink-0">
               <div className="flex items-center gap-3">
                 <div className="bg-gray-100 p-3 rounded-full text-gray-600">
                   <User size={24} />
@@ -460,7 +520,7 @@ const PatientList = ({
                     {reportPatient.nome}
                   </h2>
                   <p className="text-sm text-gray-500">
-                    Adicionar relatório do atendimento
+                    Prontuário do Paciente
                   </p>
                 </div>
               </div>
@@ -472,21 +532,113 @@ const PatientList = ({
               </button>
             </div>
 
-            {/* Corpo do Modal */}
-            <div className="p-6 bg-gray-50">
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Relatório
-              </label>
-              <textarea
-                value={reportText}
-                onChange={(e) => setReportText(e.target.value)}
-                placeholder="Escrever relatório..."
-                className="w-full h-48 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none resize-none bg-white text-gray-700 placeholder-gray-400"
-              />
+            {/* Corpo Dividido em Duas Colunas */}
+            <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+              {/* Coluna Esquerda: Timeline de Sessoes */}
+              <div className="w-full md:w-1/2 bg-gray-50 border-r border-gray-200 p-6 overflow-y-auto custom-scrollbar">
+                <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold">
+                  <Clock size={20} />
+                  <h3>Historico de Sessoes</h3>
+                </div>
+
+                {loadingPastSessoes ? (
+                  <div className="text-center py-10 text-gray-500 text-sm">
+                    Carregando historico...
+                  </div>
+                ) : pastSessoes.length === 0 ? (
+                  <div className="text-center py-10 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-xl">
+                    Nenhuma sessao registrada ainda.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {pastSessoes.map((sessao: any) => {
+                      const statusLabel: Record<string, string> = {
+                        REALIZADA: "Sessao realizada",
+                        FALTA_JUSTIFICADA: "Falta justificada",
+                        FALTA_NAO_JUSTIFICADA: "Falta nao justificada",
+                        CANCELADA: "Cancelada",
+                        RELATORIO_AVULSO: "Relatorio Avulso",
+                      };
+                      const statusColor: Record<string, string> = {
+                        REALIZADA: "text-green-600 bg-green-50",
+                        FALTA_JUSTIFICADA: "text-amber-600 bg-amber-50",
+                        FALTA_NAO_JUSTIFICADA: "text-red-600 bg-red-50",
+                        CANCELADA: "text-gray-500 bg-gray-100",
+                        RELATORIO_AVULSO: "text-blue-600 bg-blue-50",
+                      };
+                      const dataFormatada = new Date(sessao.dataSessao).toLocaleDateString("pt-BR", {
+                        day: "2-digit", month: "2-digit", year: "numeric",
+                      });
+                      return (
+                        <div
+                          key={sessao.idSessao}
+                          className="bg-white p-4 rounded-xl shadow-sm border border-gray-100"
+                        >
+                          <div className="flex justify-between items-center mb-2">
+                            <div className="flex items-center gap-1.5">
+                              <CalendarDays size={13} className="text-gray-400" />
+                              <span className="text-xs font-semibold text-gray-600">
+                                {dataFormatada}
+                              </span>
+                            </div>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${statusColor[sessao.status] ?? "text-gray-600 bg-gray-100"}`}>
+                              {statusLabel[sessao.status] ?? sessao.status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 mb-2">
+                            <User size={12} className="text-gray-400" />
+                            <span className="text-xs text-gray-400">
+                              {sessao.colaborador?.nome || "Bolsista"}
+                            </span>
+                          </div>
+                          {sessao.relatorio ? (
+                            <div className="mt-2 border-t border-gray-100 pt-2">
+                              <div className="flex items-center gap-1 mb-1">
+                                <CheckCircle2 size={12} className="text-green-500" />
+                                <span className="text-xs text-green-600 font-medium">Relatorio disponivel</span>
+                              </div>
+                              <p className="text-gray-700 text-xs whitespace-pre-wrap line-clamp-3">
+                                {sessao.relatorio.texto}
+                              </p>
+                            </div>
+                          ) : (
+                            sessao.status !== "REALIZADA" && sessao.status !== "RELATORIO_AVULSO" && (
+                              <div className="flex items-center gap-1 mt-1">
+                                <XCircle size={12} className="text-gray-400" />
+                                <span className="text-xs text-gray-400">Sem relatorio clinico</span>
+                              </div>
+                            )
+                          )}
+                          {sessao.observacao && (
+                            <p className="text-xs text-gray-500 italic mt-2 border-t border-gray-100 pt-2">
+                              {sessao.observacao}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Coluna Direita: Novo Relatorio (Admin) */}
+              <div className="w-full md:w-1/2 bg-white p-6 flex flex-col">
+                <div className="flex items-center gap-2 mb-4 text-gray-700 font-bold">
+                  <FileText size={20} />
+                  <h3>Anotação no Prontuário</h3>
+                </div>
+
+                <textarea
+                  value={reportText}
+                  onChange={(e) => setReportText(e.target.value)}
+                  placeholder="Escrever relatorio..."
+                  className="w-full flex-1 min-h-[200px] p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none resize-none bg-gray-50 text-gray-700 placeholder-gray-400"
+                />
+              </div>
             </div>
 
             {/* Footer do Modal */}
-            <div className="px-6 py-4 bg-white border-t border-gray-100 flex justify-end">
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end shrink-0">
               <button
                 onClick={handleSubmitReport}
                 disabled={reportLoading}

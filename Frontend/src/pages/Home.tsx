@@ -1,6 +1,7 @@
 import { useNavigate, Link } from "react-router-dom";
 import illustration from "../assets/images/home-illustration.svg";
 import HeaderMenu from "../components/shared/HeaderMenu";
+import Footer from "../components/shared/Footer";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -13,21 +14,21 @@ const Home = () => {
         <div className="flex gap-4 md:gap-8 items-center">
           <Link
             to="/"
-            className="text-white no-underline font-medium text-sm tracking-wide hover:opacity-80 transition-opacity"
+            className="text-white font-bold text-sm tracking-wide transition-colors"
           >
-            PRINCIPAL
+            PÁGINA INICIAL
           </Link>
           <Link
             to="/sobre"
-            className="text-white no-underline font-medium text-sm tracking-wide hover:opacity-80 transition-opacity"
+            className="text-white/80 hover:text-white no-underline font-medium text-sm tracking-wide transition-colors"
           >
             SOBRE
           </Link>
           <Link
             to="/formulario"
-            className="text-white no-underline font-medium text-sm tracking-wide hover:opacity-80 transition-opacity"
+            className="text-white/80 hover:text-white no-underline font-medium text-sm tracking-wide transition-colors"
           >
-            FORMULÁRIO
+            INSCRIÇÃO
           </Link>
         </div>
 
@@ -38,6 +39,9 @@ const Home = () => {
 
       <main className="flex-1 flex justify-between items-center px-8 md:px-20 pb-24 relative z-10">
         <div className="flex-1 max-w-2xl z-10 text-center lg:text-left mx-auto lg:mx-0">
+          <div className="mb-4 md:mb-6 inline-block bg-white/10 px-5 py-2 rounded-full text-sm md:text-base font-semibold tracking-wider backdrop-blur-sm border border-white/20 shadow-sm">
+            APSIA — Sistema de Gestão
+          </div>
           <h1 className="text-3xl md:text-[2.5rem] font-bold mb-4 md:mb-8 leading-tight tracking-wide border-b-4 border-[#0056b3] inline-block pb-2 drop-shadow-sm">
             PROGRAMA DE ACOMPANHAMENTO
             <br />
@@ -63,12 +67,11 @@ const Home = () => {
         </div>
       </main>
 
-      <footer className="absolute bottom-0 left-0 bg-[#243b75] text-white p-6 md:p-8 w-full lg:w-[60%] [clip-path:none] lg:[clip-path:polygon(0_0,_90%_0,_100%_100%,_0%_100%)] z-20 text-xs md:text-sm leading-relaxed">
-        <p className="max-w-md">
-          Projeto desenvolvido pelo FAPSI em conjunto com a FACSI da
-          Universidade Federal do Sul e Sudeste do Pará
-        </p>
-      </footer>
+      <div className="absolute bottom-0 left-0 bg-[#243b75] w-full lg:w-[60%] [clip-path:none] lg:[clip-path:polygon(0_0,_90%_0,_100%_100%,_0%_100%)] z-20">
+        <div className="p-4 md:p-6 lg:pr-24">
+          <Footer className="text-left !py-0 !text-white" shortText={true} />
+        </div>
+      </div>
     </div>
   );
 };
